@@ -1,0 +1,637 @@
+openapi: 3.0.3
+info:
+  title: Goal App API
+  version: 1.0.0
+  description: API for managing daily recurring goals
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+
+paths:
+  /goals:
+    get:
+      summary: List all goals for the authenticated user
+      description: Retrieves all goals belonging to the authenticated user
+      operationId: listGoals
+      tags:
+        - Goals
+      parameters:
+        - name: tags
+          in: query
+          description: Filter goals by tags (comma-separated)
+          required: false
+          schema:
+            type: string
+          example: "language,learning"
+        - name: active
+          in: query
+          description: Filter by active goals (those within start/end date range)
+          required: false
+          schema:
+            type: boolean
+          example: true
+      responses:
+        '200':
+          description: List of goals retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  goals:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Goal'
+                  total:
+                    type: integer
+                    description: Total number of goals
+                    example: 5
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    post:
+      summary: Create a new daily recurring goal
+      description: Creates a new goal with daily recurrence tracking
+      operationId: createGoal
+      tags:
+        - Goals
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - title
+                - targetMinutesPerDay
+                - startDate
+              properties:
+                userId:
+                  type: string
+                  description: ID of the user creating the goal
+                  example: "user123"
+                title:
+                  type: string
+                  description: Title of the goal
+                  example: "Learn Spanish"
+                description:
+                  type: string
+                  description: Detailed description of the goal
+                  example: "Practice Spanish conversation and grammar daily"
+                targetMinutesPerDay:
+                  type: integer
+                  minimum: 1
+                  description: Target number of minutes to spend on this goal per day
+                  example: 30
+                startDate:
+                  type: string
+                  format: date
+                  description: Start date of the goal
+                  example: "2025-10-05"
+                endDate:
+                  type: string
+                  format: date
+                  description: Optional end date of the goal
+                  example: "2025-12-31"
+                tags:
+                  type: array
+                  items:
+                    type: string
+                  description: Tags for categorizing the goal
+                  example: ["language", "learning"]
+      responses:
+        '201':
+          description: Goal created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Goal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /progress:
+    get:
+      summary: Get progress data for a specific month
+      description: Retrieves progress data for a month, including totals per goal and success rate
+      operationId: getProgress
+      tags:
+        - Progress
+      parameters:
+        - name: month
+          in: query
+          description: Month to retrieve progress for (format YYYY-MM)
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+          example: "2025-10"
+        - name: goalId
+          in: query
+          description: Optional filter to get progress for a specific goal only
+          required: false
+          schema:
+            type: string
+          example: "goal_abc123"
+      responses:
+        '200':
+          description: Progress data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonthlyProgressReport'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    
+    post:
+      summary: Record daily time spent on a goal
+      description: Records the time spent on a goal for a specific date. The server computes whether the daily target was met.
+      operationId: recordProgress
+      tags:
+        - Progress
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - goalId
+                - date
+                - minutesSpent
+              properties:
+                goalId:
+                  type: string
+                  description: ID of the goal this progress is for
+                  example: "goal_abc123"
+                date:
+                  type: string
+                  format: date
+                  description: Date for which progress is being recorded
+                  example: "2025-10-05"
+                minutesSpent:
+                  type: integer
+                  minimum: 0
+                  description: Number of minutes spent on the goal
+                  example: 45
+                note:
+                  type: string
+                  description: Optional note about the progress
+                  example: "Completed two lessons on verb conjugation"
+      responses:
+        '201':
+          description: Progress recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Progress'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /summary:
+    get:
+      summary: Get yearly summary with monthly success rates and streaks
+      description: Retrieves a yearly summary including aggregated monthly success rates and streaks
+      operationId: getYearlySummary
+      tags:
+        - Summary
+      parameters:
+        - name: year
+          in: query
+          description: Year to retrieve summary for (format YYYY)
+          required: true
+          schema:
+            type: string
+            pattern: '^\d{4}$'
+          example: "2025"
+        - name: goalId
+          in: query
+          description: Optional filter to get summary for a specific goal only
+          required: false
+          schema:
+            type: string
+          example: "goal_abc123"
+      responses:
+        '200':
+          description: Yearly summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/YearlySummary'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  schemas:
+    Goal:
+      type: object
+      required:
+        - id
+        - userId
+        - title
+        - targetMinutesPerDay
+        - startDate
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the goal
+          example: "goal_abc123"
+        userId:
+          type: string
+          description: ID of the user who owns the goal
+          example: "user123"
+        title:
+          type: string
+          description: Title of the goal
+          example: "Learn Spanish"
+        description:
+          type: string
+          description: Detailed description of the goal
+          example: "Practice Spanish conversation and grammar daily"
+        targetMinutesPerDay:
+          type: integer
+          minimum: 1
+          description: Target number of minutes to spend on this goal per day
+          example: 30
+        startDate:
+          type: string
+          format: date
+          description: Start date of the goal
+          example: "2025-10-05"
+        endDate:
+          type: string
+          format: date
+          description: Optional end date of the goal
+          example: "2025-12-31"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags for categorizing the goal
+          example: ["language", "learning"]
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the goal was created
+          example: "2025-10-05T10:30:00Z"
+
+    Progress:
+      type: object
+      required:
+        - id
+        - goalId
+        - date
+        - minutesSpent
+        - targetMet
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the progress entry
+          example: "progress_xyz789"
+        goalId:
+          type: string
+          description: ID of the goal this progress is for
+          example: "goal_abc123"
+        date:
+          type: string
+          format: date
+          description: Date for which progress was recorded
+          example: "2025-10-05"
+        minutesSpent:
+          type: integer
+          minimum: 0
+          description: Number of minutes spent on the goal
+          example: 45
+        note:
+          type: string
+          description: Optional note about the progress
+          example: "Completed two lessons on verb conjugation"
+        targetMet:
+          type: boolean
+          description: Whether the daily target was met (computed by server)
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the progress was recorded
+          example: "2025-10-05T14:30:00Z"
+
+    MonthlyProgressReport:
+      type: object
+      required:
+        - month
+        - goalProgress
+        - overallStats
+      properties:
+        month:
+          type: string
+          description: The month this report covers (YYYY-MM format)
+          example: "2025-10"
+        goalProgress:
+          type: array
+          description: Progress data aggregated by goal
+          items:
+            type: object
+            required:
+              - goal
+              - totalMinutesSpent
+              - totalTargetMinutes
+              - daysTracked
+              - daysTargetMet
+              - successRate
+            properties:
+              goal:
+                $ref: '#/components/schemas/Goal'
+              totalMinutesSpent:
+                type: integer
+                description: Total minutes spent on this goal during the month
+                example: 450
+              totalTargetMinutes:
+                type: integer
+                description: Total target minutes for this goal during the month
+                example: 600
+              daysTracked:
+                type: integer
+                description: Number of days with recorded progress
+                example: 15
+              daysTargetMet:
+                type: integer
+                description: Number of days where the daily target was met
+                example: 12
+              successRate:
+                type: number
+                format: float
+                minimum: 0
+                maximum: 100
+                description: Percentage of tracked days where target was met
+                example: 80.0
+              dailyProgress:
+                type: array
+                description: Day-by-day progress entries for this goal
+                items:
+                  $ref: '#/components/schemas/Progress'
+              currentStreak:
+                type: object
+                description: Current streak for this specific goal
+                properties:
+                  type:
+                    type: string
+                    enum: ["daily_target_met", "daily_progress_recorded"]
+                    example: "daily_target_met"
+                  days:
+                    type: integer
+                    example: 7
+                  startDate:
+                    type: string
+                    format: date
+                    example: "2025-10-01"
+                  endDate:
+                    type: string
+                    format: date
+                    example: "2025-10-07"
+              longestStreak:
+                type: object
+                description: Longest streak for this specific goal during the month
+                properties:
+                  type:
+                    type: string
+                    enum: ["daily_target_met", "daily_progress_recorded"]
+                    example: "daily_target_met"
+                  days:
+                    type: integer
+                    example: 15
+                  startDate:
+                    type: string
+                    format: date
+                    example: "2025-10-01"
+                  endDate:
+                    type: string
+                    format: date
+                    example: "2025-10-15"
+        overallStats:
+          type: object
+          required:
+            - totalMinutesSpent
+            - totalGoals
+            - averageSuccessRate
+          properties:
+            totalMinutesSpent:
+              type: integer
+              description: Total minutes spent across all goals
+              example: 900
+            totalGoals:
+              type: integer
+              description: Number of goals tracked during the month
+              example: 3
+              averageSuccessRate:
+                type: number
+                format: float
+                minimum: 0
+                maximum: 100
+                description: Average success rate across all goals
+                example: 75.5
+
+    YearlySummary:
+      type: object
+      required:
+        - year
+        - monthlyData
+        - overallStats
+      properties:
+        year:
+          type: string
+          description: The year this summary covers (YYYY format)
+          example: "2025"
+        monthlyData:
+          type: array
+          description: Monthly success rates and statistics
+          items:
+            type: object
+            required:
+              - month
+              - successRate
+              - totalMinutesSpent
+              - goalsTracked
+            properties:
+              month:
+                type: string
+                description: Month in YYYY-MM format
+                example: "2025-01"
+              successRate:
+                type: number
+                format: float
+                minimum: 0
+                maximum: 100
+                description: Overall success rate for the month
+                example: 78.5
+              totalMinutesSpent:
+                type: integer
+                description: Total minutes spent across all goals
+                example: 1200
+              goalsTracked:
+                type: integer
+                description: Number of goals tracked in this month
+                example: 3
+              bestPerformingGoal:
+                type: object
+                description: Goal with highest success rate in this month
+                properties:
+                  goalId:
+                    type: string
+                    example: "goal_abc123"
+                  goalTitle:
+                    type: string
+                    example: "Learn Spanish"
+                  successRate:
+                    type: number
+                    format: float
+                    example: 90.0
+        overallStats:
+          type: object
+          required:
+            - totalMinutesSpent
+            - averageSuccessRate
+            - bestMonth
+            - worstMonth
+          properties:
+            totalMinutesSpent:
+              type: integer
+              description: Total minutes spent across all goals for the year
+              example: 14400
+            averageSuccessRate:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 100
+              description: Average success rate across all months
+              example: 72.3
+            bestMonth:
+              type: object
+              description: Month with highest success rate
+              properties:
+                month:
+                  type: string
+                  example: "2025-06"
+                successRate:
+                  type: number
+                  format: float
+                  example: 85.0
+            worstMonth:
+              type: object
+              description: Month with lowest success rate
+              properties:
+                month:
+                  type: string
+                  example: "2025-02"
+                successRate:
+                  type: number
+                  format: float
+                  example: 45.0
+
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "Invalid request"
+        code:
+          type: string
+          description: Error code
+          example: "INVALID_INPUT"
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    TooManyRequests:
+      description: Too many requests - rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            message: "Rate limit exceeded. Please try again later."
+            code: "RATE_LIMIT_EXCEEDED"
+      headers:
+        X-RateLimit-Limit:
+          description: The maximum number of requests allowed in the time window
+          schema:
+            type: integer
+          example: 100
+        X-RateLimit-Remaining:
+          description: The number of requests remaining in the current time window
+          schema:
+            type: integer
+          example: 0
+        X-RateLimit-Reset:
+          description: The time at which the rate limit resets (Unix timestamp)
+          schema:
+            type: integer
+          example: 1696512000
+        Retry-After:
+          description: Number of seconds to wait before retrying
+          schema:
+            type: integer
+          example: 60
+    
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
