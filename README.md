@@ -1,28 +1,42 @@
-# goal-app
+### goal-app
 
-# Clone the repo
+### Clone the repo
+```
 git clone <your-repo>
 cd goal-app
+```
 
-# Run setup script
+### Run setup script
+```
 pnpm run setup
+```
 
-# Start development
+### Start development
+```
 pnpm run dev
+```
 
-# Run all tests
+### Run all tests
+```
 pnpm test
+```
 
-# Run tests with UI
+### Run tests with UI
+```
 pnpm test:ui
+```
 
-# Run tests with coverage
+### Run tests with coverage
+```
 pnpm test:coverage
+```
 
-# Run tests in watch mode
+### Run tests in watch mode
+```
 pnpm test:watch
+```
 
-# Generating Model Objects
+### Generating Model Objects
 
 Generate TypeScript types from the OpenAPI spec using `openapi-typescript`:
 ```
