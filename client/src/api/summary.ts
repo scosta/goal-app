@@ -1,15 +1,5 @@
-import axios from 'axios';
 import { components, operations } from '../../../shared/api-types';
-
-const API_BASE_URL = 'http://localhost:8080';
-
-// Create axios instance with default config
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+import { apiClient } from './client';
 
 // Type-safe API client for summary/analytics
 export class SummaryAPI {

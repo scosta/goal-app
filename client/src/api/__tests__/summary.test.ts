@@ -1,14 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getYearlySummary, getYearlySummaryForGoal, getYearlyStats, getMonthlyData } from '../summary';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      get: vi.fn(),
-    })),
+// Mock the API client
+vi.mock('../client', () => ({
+  apiClient: {
+    post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
+
+import { SummaryAPI } from '../summary';
+import { apiClient } from '../client';
 
 describe('SummaryAPI', () => {
   beforeEach(() => {
@@ -52,13 +55,12 @@ describe('SummaryAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getYearlySummary(params);
+      const result = await SummaryAPI.getYearlySummary(params);
 
       expect(result).toEqual(mockResponse.data);
-      expect(mockAxios.default.create().get).toHaveBeenCalledWith('/summary', { params });
+      expect(apiClient.get).toHaveBeenCalledWith('/summary', { params });
     });
 
     it('should get yearly summary with goal filter', async () => {
@@ -80,10 +82,9 @@ describe('SummaryAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getYearlySummary(params);
+      const result = await SummaryAPI.getYearlySummary(params);
 
       expect(result).toEqual(mockResponse.data);
     });
@@ -125,13 +126,12 @@ describe('SummaryAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getYearlySummaryForGoal(goalId, year);
+      const result = await SummaryAPI.getYearlySummaryForGoal(goalId, year);
 
       expect(result).toEqual(mockResponse.data);
-      expect(mockAxios.default.create().get).toHaveBeenCalledWith('/summary', {
+      expect(apiClient.get).toHaveBeenCalledWith('/summary', {
         params: { goalId, year }
       });
     });
@@ -160,13 +160,12 @@ describe('SummaryAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getYearlyStats(year);
+      const result = await SummaryAPI.getYearlyStats(year);
 
       expect(result).toEqual(mockResponse.data.overallStats);
-      expect(mockAxios.default.create().get).toHaveBeenCalledWith('/summary', {
+      expect(apiClient.get).toHaveBeenCalledWith('/summary', {
         params: { year }
       });
     });
@@ -207,13 +206,12 @@ describe('SummaryAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getMonthlyData(year);
+      const result = await SummaryAPI.getMonthlyData(year);
 
       expect(result).toEqual(mockResponse.data.monthlyData);
-      expect(mockAxios.default.create().get).toHaveBeenCalledWith('/summary', {
+      expect(apiClient.get).toHaveBeenCalledWith('/summary', {
         params: { year }
       });
     });

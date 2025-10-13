@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { recordProgress, getProgress, getProgressForGoal, updateProgress, deleteProgress } from '../progress';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      post: vi.fn(),
-      get: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-    })),
+// Mock the API client
+vi.mock('../client', () => ({
+  apiClient: {
+    post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
+
+import { ProgressAPI } from '../progress';
+import { apiClient } from '../client';
 
 describe('ProgressAPI', () => {
   beforeEach(() => {
@@ -36,13 +36,12 @@ describe('ProgressAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().post).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
 
-      const result = await recordProgress(progressData);
+      const result = await ProgressAPI.recordProgress(progressData);
 
       expect(result).toEqual(mockResponse.data);
-      expect(mockAxios.default.create().post).toHaveBeenCalledWith('/progress', progressData);
+      expect(apiClient.post).toHaveBeenCalledWith('/progress', progressData);
     });
 
     it('should record progress without optional note', async () => {
@@ -61,10 +60,9 @@ describe('ProgressAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().post).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
 
-      const result = await recordProgress(progressData);
+      const result = await ProgressAPI.recordProgress(progressData);
 
       expect(result).toEqual(mockResponse.data);
     });
@@ -97,13 +95,12 @@ describe('ProgressAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getProgress(params);
+      const result = await ProgressAPI.getProgress(params);
 
       expect(result).toEqual(mockResponse.data);
-      expect(mockAxios.default.create().get).toHaveBeenCalledWith('/progress', { params });
+      expect(apiClient.get).toHaveBeenCalledWith('/progress', { params });
     });
 
     it('should get progress with goal filter', async () => {
@@ -124,10 +121,9 @@ describe('ProgressAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getProgress(params);
+      const result = await ProgressAPI.getProgress(params);
 
       expect(result).toEqual(mockResponse.data);
     });
@@ -159,13 +155,12 @@ describe('ProgressAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-      const result = await getProgressForGoal(goalId, month);
+      const result = await ProgressAPI.getProgressForGoal(goalId, month);
 
       expect(result).toEqual(mockResponse.data);
-      expect(mockAxios.default.create().get).toHaveBeenCalledWith('/progress', {
+      expect(apiClient.get).toHaveBeenCalledWith('/progress', {
         params: { goalId, month }
       });
     });
@@ -191,13 +186,12 @@ describe('ProgressAPI', () => {
         }
       };
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().put).mockResolvedValue(mockResponse);
+      vi.mocked(apiClient.put).mockResolvedValue(mockResponse);
 
-      const result = await updateProgress(progressId, updateData);
+      const result = await ProgressAPI.updateProgress(progressId, updateData);
 
       expect(result).toEqual(mockResponse.data);
-      expect(mockAxios.default.create().put).toHaveBeenCalledWith(`/progress/${progressId}`, updateData);
+      expect(apiClient.put).toHaveBeenCalledWith(`/progress/${progressId}`, updateData);
     });
   });
 
@@ -205,12 +199,11 @@ describe('ProgressAPI', () => {
     it('should delete progress entry', async () => {
       const progressId = 'progress_xyz789';
 
-      const mockAxios = await import('axios');
-      vi.mocked(mockAxios.default.create().delete).mockResolvedValue({ data: undefined });
+      vi.mocked(apiClient.delete).mockResolvedValue({ data: undefined });
 
-      await deleteProgress(progressId);
+      await ProgressAPI.deleteProgress(progressId);
 
-      expect(mockAxios.default.create().delete).toHaveBeenCalledWith(`/progress/${progressId}`);
+      expect(apiClient.delete).toHaveBeenCalledWith(`/progress/${progressId}`);
     });
   });
 });

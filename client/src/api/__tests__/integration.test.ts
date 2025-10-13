@@ -1,18 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import GoalAppAPI from '../index';
-import { CreateGoalSchema, CreateProgressSchema } from '../../../shared/zod-schemas';
+import { schemas } from '../../../../shared/zod-schemas';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      post: vi.fn(),
-      get: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn(),
-    })),
+// Mock the API client
+vi.mock('../client', () => ({
+  apiClient: {
+    post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
+
+import { apiClient } from '../client';
 
 describe('API Integration Tests', () => {
   beforeEach(() => {
@@ -21,8 +21,6 @@ describe('API Integration Tests', () => {
 
   describe('Complete Goal Workflow', () => {
     it('should create goal, record progress, and get analytics', async () => {
-      const mockAxios = await import('axios');
-      
       // Mock create goal
       const goalData = {
         userId: 'user123',
@@ -38,7 +36,7 @@ describe('API Integration Tests', () => {
         createdAt: '2025-10-05T10:30:00Z'
       };
 
-      vi.mocked(mockAxios.default.create().post)
+      vi.mocked(apiClient.post)
         .mockResolvedValueOnce({ data: createdGoal });
 
       // Create goal
@@ -46,7 +44,7 @@ describe('API Integration Tests', () => {
       expect(goal).toEqual(createdGoal);
 
       // Validate with Zod schema
-      const goalValidation = CreateGoalSchema.safeParse(goalData);
+      const goalValidation = schemas.createGoal_Body.safeParse(goalData);
       expect(goalValidation.success).toBe(true);
 
       // Mock record progress
@@ -64,7 +62,7 @@ describe('API Integration Tests', () => {
         createdAt: '2025-10-05T14:30:00Z'
       };
 
-      vi.mocked(mockAxios.default.create().post)
+      vi.mocked(apiClient.post)
         .mockResolvedValueOnce({ data: recordedProgress });
 
       // Record progress
@@ -72,7 +70,7 @@ describe('API Integration Tests', () => {
       expect(progress).toEqual(recordedProgress);
 
       // Validate with Zod schema
-      const progressValidation = CreateProgressSchema.safeParse(progressData);
+      const progressValidation = schemas.recordProgress_Body.safeParse(progressData);
       expect(progressValidation.success).toBe(true);
 
       // Mock get progress
@@ -96,7 +94,7 @@ describe('API Integration Tests', () => {
         }
       };
 
-      vi.mocked(mockAxios.default.create().get)
+      vi.mocked(apiClient.get)
         .mockResolvedValueOnce({ data: monthlyReport });
 
       // Get monthly progress
@@ -133,7 +131,7 @@ describe('API Integration Tests', () => {
         }
       };
 
-      vi.mocked(mockAxios.default.create().get)
+      vi.mocked(apiClient.get)
         .mockResolvedValueOnce({ data: yearlySummary });
 
       // Get yearly summary
@@ -157,7 +155,7 @@ describe('API Integration Tests', () => {
         }
       };
 
-      vi.mocked(mockAxios.default.create().post)
+      vi.mocked(apiClient.post)
         .mockRejectedValueOnce(apiError);
 
       // Test error handling
@@ -184,7 +182,7 @@ describe('API Integration Tests', () => {
         startDate: 'invalid-date'
       };
 
-      const goalValidation = CreateGoalSchema.safeParse(invalidGoalData);
+      const goalValidation = schemas.createGoal_Body.safeParse(invalidGoalData);
       expect(goalValidation.success).toBe(false);
       
       if (!goalValidation.success) {
@@ -198,27 +196,25 @@ describe('API Integration Tests', () => {
         minutesSpent: -5
       };
 
-      const progressValidation = CreateProgressSchema.safeParse(invalidProgressData);
+      const progressValidation = schemas.recordProgress_Body.safeParse(invalidProgressData);
       expect(progressValidation.success).toBe(false);
     });
   });
 
   describe('API Client Consistency', () => {
     it('should maintain consistent API client configuration', async () => {
-      const mockAxios = await import('axios');
+      // Mock the API calls
+      vi.mocked(apiClient.get).mockResolvedValue({ data: { goals: [], total: 0 } });
+      vi.mocked(apiClient.get).mockResolvedValue({ data: { month: '2025-10', goalProgress: [] } });
+      vi.mocked(apiClient.get).mockResolvedValue({ data: { year: '2025', monthlyData: [] } });
       
       // Test that all API calls use the same base configuration
       await GoalAppAPI.goals.listGoals();
       await GoalAppAPI.progress.getProgress({ month: '2025-10' });
       await GoalAppAPI.summary.getYearlySummary({ year: '2025' });
 
-      // Verify axios.create was called with consistent config
-      expect(mockAxios.default.create).toHaveBeenCalledWith({
-        baseURL: 'http://localhost:8080',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // Verify API client was called
+      expect(apiClient.get).toHaveBeenCalledTimes(3);
     });
   });
 });

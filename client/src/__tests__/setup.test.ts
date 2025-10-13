@@ -19,7 +19,7 @@ describe('Setup Script and Build Process', () => {
 
   describe('Setup Script', () => {
     it('should have setup script with correct permissions', () => {
-      const setupScriptPath = join(process.cwd(), 'setup.sh');
+      const setupScriptPath = join(process.cwd(), '../setup.sh');
       expect(existsSync(setupScriptPath)).toBe(true);
       
       // Check if script is executable (this would need to be run in actual environment)
@@ -27,14 +27,14 @@ describe('Setup Script and Build Process', () => {
     });
 
     it('should contain all necessary setup commands', () => {
-      const setupScriptContent = readFileSync('setup.sh', 'utf-8');
+      const setupScriptContent = readFileSync('../setup.sh', 'utf-8');
       
       // Check for key setup commands
       expect(setupScriptContent).toContain('go mod tidy');
       expect(setupScriptContent).toContain('pnpm install');
       expect(setupScriptContent).toContain('openapi-typescript');
       expect(setupScriptContent).toContain('openapi-zod-client');
-      expect(setupScriptContent).toContain('swagger generate model');
+      expect(setupScriptContent).toContain('oapi-codegen');
     });
   });
 
@@ -42,7 +42,7 @@ describe('Setup Script and Build Process', () => {
     it('should have all necessary npm scripts', () => {
       const packageJson = JSON.parse(readFileSync('package.json', 'utf-8'));
       
-      expect(packageJson.scripts).toHaveProperty('setup');
+      // Note: setup script is optional, main setup is via ./setup.sh
       expect(packageJson.scripts).toHaveProperty('dev');
       expect(packageJson.scripts).toHaveProperty('build');
       expect(packageJson.scripts).toHaveProperty('test');
@@ -54,35 +54,35 @@ describe('Setup Script and Build Process', () => {
       
       expect(packageJson.scripts.dev).toContain('concurrently');
       expect(packageJson.scripts.dev).toContain('go run cmd/api/main.go');
-      expect(packageJson.scripts.dev).toContain('pnpm dev');
+      expect(packageJson.scripts.dev).toContain('vite');
     });
   });
 
   describe('Generated Files Structure', () => {
     it('should have all required generated files', () => {
       // Check for generated TypeScript types
-      expect(existsSync('shared/api-types.ts')).toBe(true);
+      expect(existsSync('../shared/api-types.ts')).toBe(true);
       
       // Check for generated Zod schemas
-      expect(existsSync('shared/zod-schemas.ts')).toBe(true);
+      expect(existsSync('../shared/zod-schemas.ts')).toBe(true);
       
       // Check for generated Go models
-      expect(existsSync('server/models/models.go')).toBe(true);
+      expect(existsSync('../server/models/models.go')).toBe(true);
     });
 
     it('should have correct file structure for client', () => {
-      expect(existsSync('client/src/api/goals.ts')).toBe(true);
-      expect(existsSync('client/src/api/progress.ts')).toBe(true);
-      expect(existsSync('client/src/api/summary.ts')).toBe(true);
-      expect(existsSync('client/src/api/index.ts')).toBe(true);
+      expect(existsSync('src/api/goals.ts')).toBe(true);
+      expect(existsSync('src/api/progress.ts')).toBe(true);
+      expect(existsSync('src/api/summary.ts')).toBe(true);
+      expect(existsSync('src/api/index.ts')).toBe(true);
     });
 
     it('should have test files in correct locations', () => {
-      expect(existsSync('client/src/api/__tests__/goals.test.ts')).toBe(true);
-      expect(existsSync('client/src/api/__tests__/progress.test.ts')).toBe(true);
-      expect(existsSync('client/src/api/__tests__/summary.test.ts')).toBe(true);
-      expect(existsSync('client/src/api/__tests__/integration.test.ts')).toBe(true);
-      expect(existsSync('shared/__tests__/zod-schemas.test.ts')).toBe(true);
+      expect(existsSync('src/api/__tests__/goals.test.ts')).toBe(true);
+      expect(existsSync('src/api/__tests__/progress.test.ts')).toBe(true);
+      expect(existsSync('src/api/__tests__/summary.test.ts')).toBe(true);
+      expect(existsSync('src/api/__tests__/integration.test.ts')).toBe(true);
+      expect(existsSync('../shared/__tests__/zod-schemas.test.ts')).toBe(true);
     });
   });
 
@@ -105,7 +105,7 @@ describe('Setup Script and Build Process', () => {
 
   describe('OpenAPI Specification', () => {
     it('should have valid OpenAPI spec structure', () => {
-      const openApiContent = readFileSync('shared/openapi.yaml', 'utf-8');
+      const openApiContent = readFileSync('../shared/openapi.yaml', 'utf-8');
       
       // Check for key OpenAPI elements
       expect(openApiContent).toContain('openapi: 3.0.3');
@@ -115,7 +115,7 @@ describe('Setup Script and Build Process', () => {
     });
 
     it('should define all required endpoints', () => {
-      const openApiContent = readFileSync('shared/openapi.yaml', 'utf-8');
+      const openApiContent = readFileSync('../shared/openapi.yaml', 'utf-8');
       
       expect(openApiContent).toContain('/goals:');
       expect(openApiContent).toContain('/progress:');
@@ -123,7 +123,7 @@ describe('Setup Script and Build Process', () => {
     });
 
     it('should have proper HTTP methods for each endpoint', () => {
-      const openApiContent = readFileSync('shared/openapi.yaml', 'utf-8');
+      const openApiContent = readFileSync('../shared/openapi.yaml', 'utf-8');
       
       // Goals endpoint
       expect(openApiContent).toContain('get:');
@@ -140,14 +140,14 @@ describe('Setup Script and Build Process', () => {
 
   describe('Go Module Configuration', () => {
     it('should have valid go.mod file', () => {
-      const goModContent = readFileSync('server/go.mod', 'utf-8');
+      const goModContent = readFileSync('../server/go.mod', 'utf-8');
       
       expect(goModContent).toContain('module github.com/scosta/goal-app/server');
       expect(goModContent).toContain('go 1.21');
     });
 
     it('should have go.sum file for dependency checksums', () => {
-      expect(existsSync('server/go.sum')).toBe(true);
+      expect(existsSync('../server/go.sum')).toBe(true);
     });
   });
 

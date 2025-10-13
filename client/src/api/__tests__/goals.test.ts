@@ -1,17 +1,23 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createGoal, listGoals } from '../goals';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      post: vi.fn(),
-      get: vi.fn(),
-    })),
+// Mock the API client
+vi.mock('../client', () => ({
+  apiClient: {
+    post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
+import { GoalsAPI } from '../goals';
+import { apiClient } from '../client';
+
 describe('GoalsAPI', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('should create a goal with valid data', async () => {
     const goalData = {
       userId: 'user123',
@@ -28,14 +34,12 @@ describe('GoalsAPI', () => {
       }
     };
 
-    // Mock the axios response
-    const mockAxios = await import('axios');
-    vi.mocked(mockAxios.default.create().post).mockResolvedValue(mockResponse);
+    vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
 
-    const result = await createGoal(goalData);
+    const result = await GoalsAPI.createGoal(goalData);
 
     expect(result).toEqual(mockResponse.data);
-    expect(mockAxios.default.create().post).toHaveBeenCalledWith('/goals', goalData);
+    expect(apiClient.post).toHaveBeenCalledWith('/goals', goalData);
   });
 
   it('should list goals with query parameters', async () => {
@@ -49,12 +53,11 @@ describe('GoalsAPI', () => {
       }
     };
 
-    const mockAxios = await import('axios');
-    vi.mocked(mockAxios.default.create().get).mockResolvedValue(mockResponse);
+    vi.mocked(apiClient.get).mockResolvedValue(mockResponse);
 
-    const result = await listGoals({ active: true });
+    const result = await GoalsAPI.listGoals({ active: true });
 
     expect(result).toEqual(mockResponse.data);
-    expect(mockAxios.default.create().get).toHaveBeenCalledWith('/goals', { params: { active: true } });
+    expect(apiClient.get).toHaveBeenCalledWith('/goals', { params: { active: true } });
   });
 });

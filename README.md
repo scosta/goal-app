@@ -1,58 +1,60 @@
-### goal-app
+# Goal App
 
-### Clone the repo
-```
-git clone <your-repo>
+A full-stack goal tracking application with a Go backend and React frontend, featuring type-safe API communication and comprehensive testing.
+
+## Prerequisites
+
+- Node.js 18+ and pnpm 8+
+- Go 1.21+
+- Git
+
+## Quick Start
+
+### 1. Clone and Setup
+```bash
+git clone https://github.com/scosta/goal-app
 cd goal-app
+./setup.sh
 ```
 
-### Run setup script
-```
-pnpm run setup
-```
-
-### Start development
-```
-pnpm run dev
-```
-
-### Run all tests
-```
+### 2. Run Tests
+```bash
+cd client
 pnpm test
 ```
 
-### Run tests with UI
-```
-pnpm test:ui
-```
-
-### Run tests with coverage
-```
-pnpm test:coverage
+### 3. Start Development
+```bash
+# From the root directory - starts both server and client
+pnpm run dev
 ```
 
-### Run tests in watch mode
-```
-pnpm test:watch
-```
+## Development
 
-### Generating Model Objects
+### Project Structure
+- `client/` - React frontend with TypeScript
+- `server/` - Go backend with Gin framework
+- `shared/` - Generated API types and schemas
 
-Generate TypeScript types from the OpenAPI spec using `openapi-typescript`:
-```
-pnpm install -D openapi-typescript
-npx openapi-typescript ./shared/openapi.yaml --output ./shared/api-types.ts
-```
+### Available Scripts
 
-Generate Zod schemas from the OpenAPI spec using `openapi-zod-client`:
-```
-pnpm add zod
-pnpm add -D openapi-zod-client
-npx openapi-zod-client shared/openapi.yaml -o shared/zod-schemas.ts --export-schemas
-```
+#### From root directory:
+- `pnpm run dev` - Start both server and client in development mode
+- `./setup.sh` - Generate API types and install dependencies
 
-Generate go types from the OpenAPI spec using `oapi-codegen`:
-```
-go install github.com/deepmap/oapi-codegen/cmd/oapi-codegen@latest
-cd server && oapi-codegen -generate types -o models/models.go ../shared/openapi.yaml
-```
+#### From client directory:
+- `pnpm test` - Run all tests
+- `pnpm test:ui` - Run tests with interactive UI
+- `pnpm test:coverage` - Run tests with coverage report
+- `pnpm test:watch` - Run tests in watch mode
+- `pnpm run dev` - Start client development server
+- `pnpm run build` - Build for production
+
+### API Generation
+
+The `setup.sh` script automatically generates:
+- TypeScript types from OpenAPI spec
+- Zod schemas for validation
+- Go models from OpenAPI spec
+
+All generated files are in the `shared/` directory and are automatically updated when you run `./setup.sh`.
