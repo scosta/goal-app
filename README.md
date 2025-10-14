@@ -20,7 +20,10 @@ cd goal-app
 ### 2. Run Tests
 ```bash
 cd client
-pnpm test
+pnpm test                    # Run all tests once
+pnpm test:watch             # Run tests in watch mode
+pnpm test:ui                 # Run tests with interactive UI
+pnpm test:coverage          # Run tests with coverage report
 ```
 
 ### 3. Start Development
@@ -43,12 +46,33 @@ pnpm run dev
 - `./setup.sh` - Generate API types and install dependencies
 
 #### From client directory:
-- `pnpm test` - Run all tests
+- `pnpm test` - Run all tests (includes client and shared tests)
+- `pnpm test:watch` - Run tests in watch mode
 - `pnpm test:ui` - Run tests with interactive UI
 - `pnpm test:coverage` - Run tests with coverage report
-- `pnpm test:watch` - Run tests in watch mode
 - `pnpm run dev` - Start client development server
 - `pnpm run build` - Build for production
+
+### Testing
+
+The project includes comprehensive testing:
+
+#### Test Types
+- **Setup Tests**: Validate project structure and configuration
+- **API Tests**: Test client-side API functions with mocking
+- **Integration Tests**: Test complete workflows end-to-end
+- **Schema Tests**: Validate Zod schemas for data validation
+
+#### Test Files
+- `client/src/__tests__/setup.test.ts` - Project setup validation
+- `client/src/api/__tests__/*.test.ts` - API function tests
+- `shared/__tests__/zod-schemas.test.ts` - Schema validation tests
+
+#### Test Configuration
+- **Vitest**: Fast test runner with TypeScript support
+- **Global Setup**: Mocks console methods and clears mocks between tests
+- **Path Aliases**: `@` for client code, `@shared` for shared code
+- **Coverage**: Built-in coverage reporting with `pnpm test:coverage`
 
 ### API Generation
 
