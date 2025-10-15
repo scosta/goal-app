@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { SummaryAPI } from '../summary';
+import { apiClient } from '../client';
 
 // Mock the API client
 vi.mock('../client', () => ({
@@ -10,16 +12,31 @@ vi.mock('../client', () => ({
   },
 }));
 
-import { SummaryAPI } from '../summary';
-import { apiClient } from '../client';
-
 describe('SummaryAPI', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('getYearlySummary', () => {
-    it('should get yearly summary with valid year', async () => {
+    it('should validate year parameter', async () => {
+      const invalidParams = {
+        year: 'invalid-year'
+      };
+
+      await expect(SummaryAPI.getYearlySummary(invalidParams))
+        .rejects.toThrow('Invalid year format');
+    });
+
+    it('should validate year format (YYYY)', async () => {
+      const invalidParams = {
+        year: '25'
+      };
+
+      await expect(SummaryAPI.getYearlySummary(invalidParams))
+        .rejects.toThrow('Year must be in YYYY format');
+    });
+
+    it('should fetch yearly summary', async () => {
       const params = {
         year: '2025'
       };
@@ -63,10 +80,10 @@ describe('SummaryAPI', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/summary', { params });
     });
 
-    it('should get yearly summary with goal filter', async () => {
+    it('should handle goal filter', async () => {
       const params = {
         year: '2025',
-        goalId: 'goal_abc123'
+        goalId: 'goal_123'
       };
 
       const mockResponse = {
@@ -88,11 +105,30 @@ describe('SummaryAPI', () => {
 
       expect(result).toEqual(mockResponse.data);
     });
+
+    it('should handle API errors', async () => {
+      const params = { year: '2025' };
+
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('API error'));
+
+      await expect(SummaryAPI.getYearlySummary(params))
+        .rejects.toThrow('Failed to fetch yearly summary: API error');
+    });
   });
 
   describe('getYearlySummaryForGoal', () => {
-    it('should get yearly summary for specific goal', async () => {
-      const goalId = 'goal_abc123';
+    it('should validate goal ID', async () => {
+      await expect(SummaryAPI.getYearlySummaryForGoal('', '2025'))
+        .rejects.toThrow('Goal ID is required');
+    });
+
+    it('should validate year format', async () => {
+      await expect(SummaryAPI.getYearlySummaryForGoal('goal_123', '25'))
+        .rejects.toThrow('Invalid year format');
+    });
+
+    it('should fetch yearly summary for specific goal', async () => {
+      const goalId = 'goal_123';
       const year = '2025';
 
       const mockResponse = {
@@ -105,7 +141,7 @@ describe('SummaryAPI', () => {
               totalMinutesSpent: 900,
               goalsTracked: 1,
               bestPerformingGoal: {
-                goalId: 'goal_abc123',
+                goalId: 'goal_123',
                 goalTitle: 'Learn Spanish',
                 successRate: 90.0
               }
@@ -138,7 +174,12 @@ describe('SummaryAPI', () => {
   });
 
   describe('getYearlyStats', () => {
-    it('should extract yearly statistics from summary', async () => {
+    it('should validate year format', async () => {
+      await expect(SummaryAPI.getYearlyStats('25'))
+        .rejects.toThrow('Invalid year format');
+    });
+
+    it('should extract yearly statistics', async () => {
       const year = '2025';
 
       const mockResponse = {
@@ -169,10 +210,24 @@ describe('SummaryAPI', () => {
         params: { year }
       });
     });
+
+    it('should handle API errors', async () => {
+      const year = '2025';
+
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('API error'));
+
+      await expect(SummaryAPI.getYearlyStats(year))
+        .rejects.toThrow('Failed to fetch yearly stats: API error');
+    });
   });
 
   describe('getMonthlyData', () => {
-    it('should extract monthly data from summary', async () => {
+    it('should validate year format', async () => {
+      await expect(SummaryAPI.getMonthlyData('25'))
+        .rejects.toThrow('Invalid year format');
+    });
+
+    it('should extract monthly data', async () => {
       const year = '2025';
 
       const mockResponse = {
@@ -214,6 +269,15 @@ describe('SummaryAPI', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/summary', {
         params: { year }
       });
+    });
+
+    it('should handle API errors', async () => {
+      const year = '2025';
+
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('API error'));
+
+      await expect(SummaryAPI.getMonthlyData(year))
+        .rejects.toThrow('Failed to fetch monthly data: API error');
     });
   });
 });

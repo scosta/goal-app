@@ -1,4 +1,4 @@
-module github.com/scosta/goal-app/server
+module github.com/scosta/goal-app
 
 go 1.21
 

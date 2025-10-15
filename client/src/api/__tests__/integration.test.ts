@@ -33,7 +33,8 @@ describe('API Integration Tests', () => {
       const createdGoal = {
         id: 'goal_abc123',
         ...goalData,
-        createdAt: '2025-10-05T10:30:00Z'
+        createdAt: '2025-10-05T10:30:00Z',
+        status: 'active'
       };
 
       vi.mocked(apiClient.post)
@@ -142,8 +143,6 @@ describe('API Integration Tests', () => {
 
   describe('Error Handling Workflow', () => {
     it('should handle API errors gracefully', async () => {
-      const mockAxios = await import('axios');
-      
       // Mock API error
       const apiError = {
         response: {
@@ -169,6 +168,31 @@ describe('API Integration Tests', () => {
       } catch (error) {
         expect(error).toEqual(apiError);
       }
+    });
+
+    it('should handle network failures with retry', async () => {
+      const goalData = {
+        userId: 'user123',
+        title: 'Learn Spanish',
+        targetMinutesPerDay: 30,
+        startDate: '2025-10-05'
+      };
+
+      // First call fails, second succeeds
+      vi.mocked(apiClient.post)
+        .mockRejectedValueOnce(new Error('Network error'))
+        .mockResolvedValueOnce({ 
+          data: { 
+            id: 'goal_123', 
+            ...goalData,
+            createdAt: '2025-10-05T10:30:00Z',
+            status: 'active'
+          } 
+        });
+
+      const result = await GoalAppAPI.goals.createGoal(goalData);
+      expect(result.id).toBe('goal_123');
+      expect(apiClient.post).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -199,6 +223,18 @@ describe('API Integration Tests', () => {
       const progressValidation = schemas.recordProgress_Body.safeParse(invalidProgressData);
       expect(progressValidation.success).toBe(false);
     });
+
+    it('should validate query parameters', () => {
+      // Test invalid month format
+      const invalidMonth = '2025/10';
+      const monthRegex = /^\d{4}-\d{2}$/;
+      expect(monthRegex.test(invalidMonth)).toBe(false);
+
+      // Test invalid year format
+      const invalidYear = '25';
+      const yearRegex = /^\d{4}$/;
+      expect(yearRegex.test(invalidYear)).toBe(false);
+    });
   });
 
   describe('API Client Consistency', () => {
@@ -215,6 +251,26 @@ describe('API Integration Tests', () => {
 
       // Verify API client was called
       expect(apiClient.get).toHaveBeenCalledTimes(3);
+    });
+
+    it('should handle concurrent API calls', async () => {
+      // Mock concurrent API calls
+      vi.mocked(apiClient.get).mockResolvedValue({ data: { goals: [], total: 0 } });
+      vi.mocked(apiClient.post).mockResolvedValue({ data: { id: 'goal_123' } });
+
+      // Make concurrent calls
+      const [goals, newGoal] = await Promise.all([
+        GoalAppAPI.goals.listGoals(),
+        GoalAppAPI.goals.createGoal({
+          userId: 'user123',
+          title: 'Test Goal',
+          targetMinutesPerDay: 30,
+          startDate: '2025-10-05'
+        })
+      ]);
+
+      expect(goals).toBeDefined();
+      expect(newGoal).toBeDefined();
     });
   });
 });

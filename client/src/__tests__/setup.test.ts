@@ -78,6 +78,7 @@ describe('Setup Script and Build Process', () => {
     });
 
     it('should have test files in correct locations', () => {
+      // Comprehensive unit tests that should exist
       expect(existsSync('src/api/__tests__/goals.test.ts')).toBe(true);
       expect(existsSync('src/api/__tests__/progress.test.ts')).toBe(true);
       expect(existsSync('src/api/__tests__/summary.test.ts')).toBe(true);
@@ -142,7 +143,7 @@ describe('Setup Script and Build Process', () => {
     it('should have valid go.mod file', () => {
       const goModContent = readFileSync('../server/go.mod', 'utf-8');
       
-      expect(goModContent).toContain('module github.com/scosta/goal-app/server');
+      expect(goModContent).toContain('module github.com/scosta/goal-app');
       expect(goModContent).toContain('go 1.21');
     });
 

@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ProgressAPI } from '../progress';
+import { apiClient } from '../client';
 
 // Mock the API client
 vi.mock('../client', () => ({
@@ -10,26 +12,55 @@ vi.mock('../client', () => ({
   },
 }));
 
-import { ProgressAPI } from '../progress';
-import { apiClient } from '../client';
-
 describe('ProgressAPI', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   describe('recordProgress', () => {
-    it('should record progress with valid data', async () => {
-      const progressData = {
-        goalId: 'goal_abc123',
+    it('should validate progress data', async () => {
+      const invalidData = {
+        goalId: '',
+        date: 'invalid-date',
+        minutesSpent: -5
+      };
+
+      await expect(ProgressAPI.recordProgress(invalidData))
+        .rejects.toThrow('Invalid progress data');
+    });
+
+    it('should validate minutes spent', async () => {
+      const invalidData = {
+        goalId: 'goal_123',
         date: '2025-10-05',
-        minutesSpent: 45,
-        note: 'Completed two lessons'
+        minutesSpent: -1
+      };
+
+      await expect(ProgressAPI.recordProgress(invalidData))
+        .rejects.toThrow('Minutes spent must be non-negative');
+    });
+
+    it('should validate date format', async () => {
+      const invalidData = {
+        goalId: 'goal_123',
+        date: 'invalid-date',
+        minutesSpent: 30
+      };
+
+      await expect(ProgressAPI.recordProgress(invalidData))
+        .rejects.toThrow('Invalid date format');
+    });
+
+    it('should calculate target met status', async () => {
+      const progressData = {
+        goalId: 'goal_123',
+        date: '2025-10-05',
+        minutesSpent: 45
       };
 
       const mockResponse = {
         data: {
-          id: 'progress_xyz789',
+          id: 'progress_123',
           ...progressData,
           targetMet: true,
           createdAt: '2025-10-05T14:30:00Z'
@@ -41,35 +72,70 @@ describe('ProgressAPI', () => {
       const result = await ProgressAPI.recordProgress(progressData);
 
       expect(result).toEqual(mockResponse.data);
-      expect(apiClient.post).toHaveBeenCalledWith('/progress', progressData);
+      expect(apiClient.post).toHaveBeenCalledWith('/progress', {
+        ...progressData,
+        targetMet: true
+      });
     });
 
-    it('should record progress without optional note', async () => {
+    it('should handle optional note field', async () => {
       const progressData = {
-        goalId: 'goal_abc123',
+        goalId: 'goal_123',
+        date: '2025-10-05',
+        minutesSpent: 30
+        // No note field
+      };
+
+      const mockResponse = {
+        data: {
+          id: 'progress_123',
+          ...progressData,
+          targetMet: true,
+          createdAt: '2025-10-05T14:30:00Z'
+        }
+      };
+
+      vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
+
+      const result = await ProgressAPI.recordProgress(progressData);
+
+      expect(result).toEqual(mockResponse.data);
+    });
+
+    it('should handle API errors', async () => {
+      const progressData = {
+        goalId: 'goal_123',
         date: '2025-10-05',
         minutesSpent: 30
       };
 
-      const mockResponse = {
-        data: {
-          id: 'progress_xyz789',
-          ...progressData,
-          targetMet: true,
-          createdAt: '2025-10-05T14:30:00Z'
-        }
-      };
+      vi.mocked(apiClient.post).mockRejectedValue(new Error('API error'));
 
-      vi.mocked(apiClient.post).mockResolvedValue(mockResponse);
-
-      const result = await ProgressAPI.recordProgress(progressData);
-
-      expect(result).toEqual(mockResponse.data);
+      await expect(ProgressAPI.recordProgress(progressData))
+        .rejects.toThrow('Failed to record progress: API error');
     });
   });
 
   describe('getProgress', () => {
-    it('should get progress for a specific month', async () => {
+    it('should validate month parameter', async () => {
+      const invalidParams = {
+        month: 'invalid-month'
+      };
+
+      await expect(ProgressAPI.getProgress(invalidParams))
+        .rejects.toThrow('Invalid month format');
+    });
+
+    it('should validate month format (YYYY-MM)', async () => {
+      const invalidParams = {
+        month: '2025/10'
+      };
+
+      await expect(ProgressAPI.getProgress(invalidParams))
+        .rejects.toThrow('Month must be in YYYY-MM format');
+    });
+
+    it('should fetch progress for month', async () => {
       const params = {
         month: '2025-10'
       };
@@ -103,10 +169,10 @@ describe('ProgressAPI', () => {
       expect(apiClient.get).toHaveBeenCalledWith('/progress', { params });
     });
 
-    it('should get progress with goal filter', async () => {
+    it('should handle goal filter', async () => {
       const params = {
         month: '2025-10',
-        goalId: 'goal_abc123'
+        goalId: 'goal_123'
       };
 
       const mockResponse = {
@@ -127,11 +193,30 @@ describe('ProgressAPI', () => {
 
       expect(result).toEqual(mockResponse.data);
     });
+
+    it('should handle API errors', async () => {
+      const params = { month: '2025-10' };
+
+      vi.mocked(apiClient.get).mockRejectedValue(new Error('API error'));
+
+      await expect(ProgressAPI.getProgress(params))
+        .rejects.toThrow('Failed to fetch progress: API error');
+    });
   });
 
   describe('getProgressForGoal', () => {
-    it('should get progress for a specific goal and month', async () => {
-      const goalId = 'goal_abc123';
+    it('should validate goal ID', async () => {
+      await expect(ProgressAPI.getProgressForGoal('', '2025-10'))
+        .rejects.toThrow('Goal ID is required');
+    });
+
+    it('should validate month format', async () => {
+      await expect(ProgressAPI.getProgressForGoal('goal_123', 'invalid-month'))
+        .rejects.toThrow('Invalid month format');
+    });
+
+    it('should fetch progress for specific goal', async () => {
+      const goalId = 'goal_123';
       const month = '2025-10';
 
       const mockResponse = {
@@ -167,8 +252,22 @@ describe('ProgressAPI', () => {
   });
 
   describe('updateProgress', () => {
-    it('should update existing progress entry', async () => {
-      const progressId = 'progress_xyz789';
+    it('should validate progress ID', async () => {
+      await expect(ProgressAPI.updateProgress('', {}))
+        .rejects.toThrow('Progress ID is required');
+    });
+
+    it('should validate update data', async () => {
+      const invalidData = {
+        minutesSpent: -1
+      };
+
+      await expect(ProgressAPI.updateProgress('progress_123', invalidData))
+        .rejects.toThrow('Invalid update data');
+    });
+
+    it('should update progress', async () => {
+      const progressId = 'progress_123';
       const updateData = {
         minutesSpent: 60,
         note: 'Updated progress'
@@ -177,7 +276,7 @@ describe('ProgressAPI', () => {
       const mockResponse = {
         data: {
           id: progressId,
-          goalId: 'goal_abc123',
+          goalId: 'goal_123',
           date: '2025-10-05',
           minutesSpent: 60,
           note: 'Updated progress',
@@ -193,17 +292,41 @@ describe('ProgressAPI', () => {
       expect(result).toEqual(mockResponse.data);
       expect(apiClient.put).toHaveBeenCalledWith(`/progress/${progressId}`, updateData);
     });
+
+    it('should handle update errors', async () => {
+      const progressId = 'progress_123';
+      const updateData = { minutesSpent: 60 };
+
+      vi.mocked(apiClient.put).mockRejectedValue(new Error('Update failed'));
+
+      await expect(ProgressAPI.updateProgress(progressId, updateData))
+        .rejects.toThrow('Failed to update progress: Update failed');
+    });
   });
 
   describe('deleteProgress', () => {
-    it('should delete progress entry', async () => {
-      const progressId = 'progress_xyz789';
+    it('should validate progress ID', async () => {
+      await expect(ProgressAPI.deleteProgress(''))
+        .rejects.toThrow('Progress ID is required');
+    });
+
+    it('should delete progress', async () => {
+      const progressId = 'progress_123';
 
       vi.mocked(apiClient.delete).mockResolvedValue({ data: undefined });
 
       await ProgressAPI.deleteProgress(progressId);
 
       expect(apiClient.delete).toHaveBeenCalledWith(`/progress/${progressId}`);
+    });
+
+    it('should handle delete errors', async () => {
+      const progressId = 'progress_123';
+
+      vi.mocked(apiClient.delete).mockRejectedValue(new Error('Delete failed'));
+
+      await expect(ProgressAPI.deleteProgress(progressId))
+        .rejects.toThrow('Failed to delete progress: Delete failed');
     });
   });
 });
