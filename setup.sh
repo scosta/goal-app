@@ -23,7 +23,7 @@ npx openapi-zod-client shared/openapi.yaml -o shared/zod-schemas.ts --export-sch
 # Generate Go models
 echo "🔧 Generating Go models..."
 cd server
-oapi-codegen -generate types -o models/models.go ../shared/openapi.yaml
+oapi-codegen -generate types -o internal/models/models.go ../shared/openapi.yaml
 cd ..
 
 echo "✅ Setup complete! You can now run:"
