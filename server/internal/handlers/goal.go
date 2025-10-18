@@ -48,7 +48,7 @@ func (h *GoalHandler) CreateGoal(c *gin.Context) {
 // GET /goals
 func (h *GoalHandler) ListGoals(c *gin.Context) {
 	uid := c.GetString("uid")
-	iter := h.Fs.Collection(h.Coll).Where("userId", "==", uid).Documents(c.Request.Context())
+	iter := h.Fs.Collection(h.Coll).Where("UserId", "==", uid).Documents(c.Request.Context())
 	var goals []openapi.Goal
 	for {
 		doc, err := iter.Next()

@@ -10,8 +10,8 @@ EMULATOR_PID=$!
 echo "Waiting for emulator to start..."
 sleep 10
 
-# Set environment variable
-export FIRESTORE_EMULATOR_HOST=localhost:8080
+# Set environment variable (use port 8081 to avoid conflict with Go server)
+export FIRESTORE_EMULATOR_HOST=localhost:8081
 
 echo "Running integration tests..."
 go test -v ./internal/handlers/integration_test.go

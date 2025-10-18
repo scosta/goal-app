@@ -39,11 +39,11 @@ go test ./internal/handlers  # Run only handler tests
 #### Integration Tests with Firestore Emulator
 ```bash
 # Start Firestore emulator (in one terminal)
-firebase emulators:start --project test-project --only firestore
+firebase emulators:start --project test-project --only firestore --port 8081
 
 # Run integration tests (in another terminal)
 cd server
-export FIRESTORE_EMULATOR_HOST=localhost:8080
+export FIRESTORE_EMULATOR_HOST=localhost:8081
 go test -v ./internal/handlers/integration_test.go
 
 # Or use the automated script

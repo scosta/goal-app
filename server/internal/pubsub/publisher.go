@@ -17,6 +17,11 @@ func NewPublisher(ctx context.Context, client *pubsub.Client, topicID string) *P
 }
 
 func (p *Publisher) Publish(ctx context.Context, event interface{}) error {
+	// Skip publishing if topic is nil (for testing)
+	if p.topic == nil {
+		return nil
+	}
+
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err

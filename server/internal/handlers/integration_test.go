@@ -22,8 +22,8 @@ import (
 )
 
 func setupFirestoreEmulator() (*firestore.Client, error) {
-	// Set Firestore emulator host
-	os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:8080")
+	// Set Firestore emulator host (use different port to avoid conflict with Go server)
+	os.Setenv("FIRESTORE_EMULATOR_HOST", "localhost:8081")
 
 	ctx := context.Background()
 	client, err := firestore.NewClient(ctx, "test-project")
@@ -43,7 +43,7 @@ func setupTestRouter() (*gin.Engine, *firestore.Client, *pubsub.Publisher) {
 		panic(fmt.Sprintf("Failed to setup Firestore emulator: %v", err))
 	}
 
-	// Setup mock publisher
+	// Setup mock publisher (no-op for testing)
 	publisher := &pubsub.Publisher{}
 
 	// Create handlers
@@ -336,6 +336,14 @@ func TestYearlySummaryCalculation(t *testing.T) {
 
 	overallStats := summary["overallStats"].(map[string]interface{})
 	assert.Equal(t, float64(100), overallStats["totalMinutesSpent"]) // 30 + 45 + 25
+}
+
+// MockPublisher for testing (no-op implementation)
+type MockPublisher struct{}
+
+func (m *MockPublisher) Publish(ctx context.Context, event interface{}) error {
+	// No-op for testing
+	return nil
 }
 
 // Helper function

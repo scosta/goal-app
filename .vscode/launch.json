@@ -1,0 +1,40 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Go Tests - Integration",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestGoalWorkflow"
+            ],
+            "showLog": true,
+            "env": {
+                "FIRESTORE_EMULATOR_HOST": "localhost:8080"
+            }
+        },
+        {
+            "name": "Debug Go Tests - Unit",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestCalculateSuccessRate"
+            ],
+            "showLog": true
+        },
+        {
+            "name": "Debug Go Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/server/cmd/api/main.go",
+            "showLog": true
+        }
+    ]
+}
