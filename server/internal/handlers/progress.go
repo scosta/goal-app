@@ -61,10 +61,19 @@ func (h *ProgressHandler) GetProgress(c *gin.Context) {
 		return
 	}
 
+	yearNum, monthNum, err := parseYearMonth(month)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid month format. Expected YYYY-MM"})
+		return
+	}
+
+	startDate := time.Date(yearNum, time.Month(monthNum), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, 0) // Next month
+
 	// Query progress entries for the given month
 	iter := h.Fs.Collection(h.Coll).
-		Where("createdAt", ">=", time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC)). // Start of month
-		Where("createdAt", "<", time.Date(2025, 11, 1, 0, 0, 0, 0, time.UTC)).  // Start of next month
+		Where("CreatedAt", ">=", startDate).
+		Where("CreatedAt", "<", endDate).
 		Documents(c.Request.Context())
 
 	var progress []openapi.Progress
@@ -163,4 +172,12 @@ func (h *ProgressHandler) DeleteProgress(c *gin.Context) {
 	})
 
 	c.JSON(http.StatusOK, gin.H{"message": "Progress entry deleted"})
+}
+
+func parseYearMonth(month string) (int, int, error) {
+	t, err := time.Parse("2006-01", month)
+	if err != nil {
+		return 0, 0, err
+	}
+	return t.Year(), int(t.Month()), nil
 }

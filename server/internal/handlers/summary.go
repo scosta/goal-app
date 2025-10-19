@@ -46,8 +46,8 @@ func (h *SummaryHandler) GetMonthlySummary(c *gin.Context) {
 
 	// Get all progress entries for the month
 	progressIter := h.Fs.Collection(h.ProgressColl).
-		Where("createdAt", ">=", startDate).
-		Where("createdAt", "<", endDate).
+		Where("CreatedAt", ">=", startDate).
+		Where("CreatedAt", "<", endDate).
 		Documents(c.Request.Context())
 
 	var progressEntries []openapi.Progress
@@ -63,8 +63,13 @@ func (h *SummaryHandler) GetMonthlySummary(c *gin.Context) {
 	}
 
 	// Get all goals for the user
+	uid := c.GetString("uid")
+	if uid == "" {
+		uid = "" // Default for development (empty string matches the goals)
+	}
+
 	goalsIter := h.Fs.Collection(h.GoalsColl).
-		Where("userId", "==", "test-user").
+		Where("UserId", "==", uid).
 		Documents(c.Request.Context())
 
 	var goals []openapi.Goal
@@ -85,7 +90,7 @@ func (h *SummaryHandler) GetMonthlySummary(c *gin.Context) {
 		goalProgress[p.GoalId] = append(goalProgress[p.GoalId], p)
 	}
 
-	// Calculate goal progress for each goal
+	// Only process goals that have progress entries for this month
 	var goalProgressList []struct {
 		GoalId        string  `json:"goalId"`
 		GoalTitle     string  `json:"goalTitle"`
@@ -95,30 +100,42 @@ func (h *SummaryHandler) GetMonthlySummary(c *gin.Context) {
 		LongestStreak int     `json:"longestStreak"`
 	}
 	totalMinutesSpent := 0
-	totalGoals := len(goals)
+	totalGoals := 0
 
+	// Create a map of goals for quick lookup
+	goalsMap := make(map[string]openapi.Goal)
 	for _, goal := range goals {
-		progress := goalProgress[goal.Id]
+		goalsMap[goal.Id] = goal
+	}
 
-		// Calculate success rate for this goal
-		daysInMonth := int(endDate.Sub(startDate).Hours() / 24)
-		daysWithProgress := len(progress)
-		successRate := float64(daysWithProgress) / float64(daysInMonth) * 100
+	// Only process goals that have progress entries
+	for goalId, progress := range goalProgress {
+		goal, exists := goalsMap[goalId]
+		if !exists {
+			continue // Skip if goal not found
+		}
 
 		// Calculate total minutes spent on this goal
 		goalMinutesSpent := 0
+		daysTargetMet := 0
 		for _, p := range progress {
 			goalMinutesSpent += p.MinutesSpent
+			if p.TargetMet {
+				daysTargetMet++
+			}
 		}
 		totalMinutesSpent += goalMinutesSpent
+		totalGoals++
 
-		// Calculate current streak (simplified)
-		currentStreak := 0
+		// Calculate success rate based on target met vs total days with progress
+		successRate := 0.0
 		if len(progress) > 0 {
-			// Sort by date and calculate consecutive days
-			// For now, just use the number of entries as a proxy
-			currentStreak = len(progress)
+			successRate = float64(daysTargetMet) / float64(len(progress)) * 100
 		}
+
+		// Calculate current streak (simplified - just count consecutive days with progress)
+		currentStreak := len(progress)
+		longestStreak := len(progress) // Simplified
 
 		goalProgressList = append(goalProgressList, struct {
 			GoalId        string  `json:"goalId"`
@@ -133,7 +150,7 @@ func (h *SummaryHandler) GetMonthlySummary(c *gin.Context) {
 			SuccessRate:   successRate,
 			MinutesSpent:  goalMinutesSpent,
 			CurrentStreak: currentStreak,
-			LongestStreak: currentStreak, // Simplified
+			LongestStreak: longestStreak,
 		})
 	}
 
@@ -182,8 +199,8 @@ func (h *SummaryHandler) GetYearlySummary(c *gin.Context) {
 
 	// Get all progress entries for the year
 	progressIter := h.Fs.Collection(h.ProgressColl).
-		Where("createdAt", ">=", startDate).
-		Where("createdAt", "<", endDate).
+		Where("CreatedAt", ">=", startDate).
+		Where("CreatedAt", "<", endDate).
 		Documents(c.Request.Context())
 
 	var progressEntries []openapi.Progress
