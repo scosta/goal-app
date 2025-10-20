@@ -6,6 +6,7 @@ A full-stack goal tracking application with a Go backend and React frontend, fea
 
 - Node.js 18+ and pnpm 8+
 - Go 1.21+
+- Python 3.8+ (for analytics)
 - Git
 
 ## Quick Start
@@ -17,7 +18,21 @@ cd goal-app
 ./setup.sh
 ```
 
-### 2. Run Tests
+### 2. Environment Configuration
+```bash
+# Copy the environment template
+cp .env.example .env
+
+# Edit the .env file with your values
+# Required for development:
+# - FIRESTORE_PROJECT_ID=your-project-id
+# - FIRESTORE_EMULATOR_HOST=localhost:8081 (for local development)
+
+# Note: The .env file should be in the project root directory
+# Both Go server and Python analytics will load from ../.env
+```
+
+### 3. Run Tests
 
 #### Frontend Tests (Client)
 ```bash
@@ -209,14 +224,6 @@ COPY --from=builder /app/goal-app .
 CMD ["./goal-app"]
 ```
 
-### Environment Variables
-```bash
-# Backend environment variables
-export FIRESTORE_PROJECT_ID=your-project-id
-export FIRESTORE_EMULATOR_HOST=localhost:8080  # Only for development
-export PORT=8080                               # Server port
-```
-
 ### Health Checks
 ```bash
 # Check if backend is running
@@ -224,6 +231,64 @@ curl http://localhost:8080/health
 
 # Expected response:
 # {"status":"ok","service":"goal-app-api"}
+```
+
+## Environment Configuration
+
+### Environment Variables
+
+The application uses environment variables for configuration. Copy `.env.example` to `.env` and customize for your environment:
+
+```bash
+# Development (local)
+FIRESTORE_PROJECT_ID=your-project-id
+FIRESTORE_EMULATOR_HOST=localhost:8081
+PUBSUB_TOPIC=goal-events
+PORT=8080
+
+# Production
+FIRESTORE_PROJECT_ID=your-production-project
+# FIRESTORE_EMULATOR_HOST not set (uses real Firestore)
+PUBSUB_TOPIC=goal-events-prod
+PORT=8080
+```
+
+### Environment-Specific Setup
+
+#### **Local Development**
+```bash
+# .env for local development
+FIRESTORE_PROJECT_ID=test-project
+FIRESTORE_EMULATOR_HOST=localhost:8081
+PUBSUB_TOPIC=goal-events
+PORT=8080
+GIN_MODE=debug
+```
+
+#### **Staging**
+```bash
+# .env for staging
+FIRESTORE_PROJECT_ID=goal-app-staging
+PUBSUB_TOPIC=goal-events-staging
+PORT=8080
+GIN_MODE=release
+```
+
+#### **Production**
+```bash
+# .env for production
+FIRESTORE_PROJECT_ID=goal-app-prod
+PUBSUB_TOPIC=goal-events-prod
+PORT=8080
+GIN_MODE=release
+```
+
+### Analytics Environment
+```bash
+# For analytics/ directory
+DATABRICKS_HOST=your-workspace.cloud.databricks.com
+DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/your-warehouse-id
+DATABRICKS_TOKEN=your-databricks-token
 ```
 
 ## Troubleshooting

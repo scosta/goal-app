@@ -10,6 +10,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"cloud.google.com/go/pubsub"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 
 	"github.com/scosta/goal-app/internal/handlers"
 	apppubsub "github.com/scosta/goal-app/internal/pubsub"
@@ -17,6 +18,11 @@ import (
 
 func main() {
 	fmt.Println("Starting Goal App API server...")
+
+	// Load environment variables from .env file in project root
+	if err := godotenv.Load("../.env"); err != nil {
+		log.Println("No .env file found in project root, using system environment variables")
+	}
 
 	// Initialize database connection
 	ctx := context.Background()
