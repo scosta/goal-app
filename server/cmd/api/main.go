@@ -43,14 +43,25 @@ func main() {
 	}
 	defer fsClient.Close()
 
-	// Initialize PubSub client (optional for development)
+	// Initialize PubSub client
 	var publisher *apppubsub.Publisher
-	if emulatorHost != "" {
-		// Use mock publisher for emulator/development
-		publisher = &apppubsub.Publisher{}
-		log.Println("Using mock publisher for development")
+	pubsubEmulatorHost := os.Getenv("PUBSUB_EMULATOR_HOST")
+
+	if pubsubEmulatorHost != "" {
+		// Use PubSub emulator for development
+		log.Printf("Using PubSub emulator at %s", pubsubEmulatorHost)
+		pubsubClient, err := pubsub.NewClient(ctx, projectID)
+		if err != nil {
+			log.Printf("Warning: Failed to create PubSub client: %v", err)
+			log.Println("Using mock publisher instead")
+			publisher = &apppubsub.Publisher{}
+		} else {
+			defer pubsubClient.Close()
+			// Initialize publisher with real PubSub client
+			publisher = apppubsub.NewPublisher(ctx, pubsubClient, "goal-events")
+		}
 	} else {
-		// Only create PubSub client if not using emulator
+		// Use real PubSub client for production
 		pubsubClient, err := pubsub.NewClient(ctx, projectID)
 		if err != nil {
 			log.Printf("Warning: Failed to create PubSub client: %v", err)
