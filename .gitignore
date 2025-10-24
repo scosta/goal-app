@@ -7,6 +7,16 @@ coverage/
 # Environment variables
 .env
 .env.local
+.env.test
+
+# Test artifacts
+.consumer_pid
+.firestore_pid
+.pubsub_pid
+.emulator_pid
+
+# Python virtual environments
+analytics/venv/
 
 # Logs
 *.log

@@ -1,12 +1,29 @@
 import os
 import json
-import pandas as pd
 from dotenv import load_dotenv
 from google.cloud import pubsub_v1
-from databricks import sql
+
+# Optional imports for analytics
+try:
+    import pandas as pd
+    PANDAS_AVAILABLE = True
+except ImportError:
+    PANDAS_AVAILABLE = False
+    print("Warning: pandas not available. Analytics will run in development mode.")
+
+try:
+    from databricks import sql
+    DATABRICKS_AVAILABLE = True
+except ImportError:
+    DATABRICKS_AVAILABLE = False
+    print("Warning: databricks-sql-connector not available. Analytics will run in development mode.")
 
 # Load environment variables from .env file in project root
-load_dotenv("../.env")
+# Try .env.test first (for testing), then fall back to .env
+if os.path.exists("../.env.test"):
+    load_dotenv("../.env.test")
+else:
+    load_dotenv("../.env")
 
 PROJECT_ID = os.getenv("FIRESTORE_PROJECT_ID")
 GOAL_TOPIC = os.getenv("PUBSUB_TOPIC", "goal-events")
@@ -47,7 +64,7 @@ except Exception as e:
 
 # Databricks SQL client (optional for development)
 conn = None
-if os.getenv("DATABRICKS_HOST") and os.getenv("DATABRICKS_HTTP_PATH") and os.getenv("DATABRICKS_TOKEN"):
+if DATABRICKS_AVAILABLE and os.getenv("DATABRICKS_HOST") and os.getenv("DATABRICKS_HTTP_PATH") and os.getenv("DATABRICKS_TOKEN"):
     try:
         conn = sql.connect(
             server_hostname=os.getenv("DATABRICKS_HOST"),
@@ -58,21 +75,30 @@ if os.getenv("DATABRICKS_HOST") and os.getenv("DATABRICKS_HTTP_PATH") and os.get
     except Exception as e:
         print(f"Failed to connect to Databricks: {e}")
         print("Running in development mode without Databricks")
+        conn = None
 else:
-    print("Databricks credentials not found, running in development mode")
+    if not DATABRICKS_AVAILABLE:
+        print("Databricks connector not available, running in development mode")
+    else:
+        print("Databricks credentials not found, running in development mode")
 
 def callback(message: pubsub_v1.subscriber.message.Message) -> None:
     data = json.loads(message.data.decode("utf-8"))
     print(f"Received event: {data}")
     
-    if conn:
+    if conn and PANDAS_AVAILABLE:
         # write to Databricks table (Delta Lake)
         df = pd.json_normalize(data)
         df.to_sql(name="goal_events", con=conn, if_exists="append", index=False)
         print("Event written to Databricks")
     else:
         # Development mode - just log the event
-        print(f"Development mode: Event would be written to Databricks: {data}")
+        if not PANDAS_AVAILABLE:
+            print(f"Development mode: pandas not available, event logged: {data}")
+        elif not conn:
+            print(f"Development mode: No Databricks connection, event logged: {data}")
+        else:
+            print(f"Development mode: Event would be written to Databricks: {data}")
     
     message.ack()
 

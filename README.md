@@ -5,35 +5,23 @@ A full-stack goal tracking application with Go backend, React frontend, and real
 ## Quick Start
 
 ```bash
-# 1. Clone and setup
+# Clone and setup
 git clone https://github.com/scosta/goal-app
 cd goal-app
 ./setup.sh
 
-# 2. Configure environment
+# Configure environment
 cp .env.example .env
 # Edit .env with your values
-
-# 3. Start development
-pnpm run dev
 ```
-
-## Prerequisites
-
-- Node.js 18+ and pnpm 8+
-- Go 1.21+
-- Python 3.8+ (for analytics)
-- Git
-
-## Development
 
 ### Start All Services
 ```bash
 # Terminal 1: Firestore emulator
-firebase emulators:start --project test-project --only firestore
+firebase emulators:start --project goal-app --only firestore
 
 # Terminal 2: PubSub emulator  
-gcloud beta emulators pubsub start --project test-project
+gcloud beta emulators pubsub start --project goal-app
 
 # Terminal 3: Go server
 cd server && go run cmd/api/main.go
@@ -42,19 +30,7 @@ cd server && go run cmd/api/main.go
 cd analytics && source venv/bin/activate && python pubsub_consumer.py
 ```
 
-### Testing
-```bash
-# Frontend tests
-cd client && pnpm test
-
-# Backend tests
-cd server && go test ./...
-
-# Integration tests (with emulators running)
-cd server && go test -v ./internal/handlers/integration_test.go
-```
-
-### Build Applications
+## Build Applications
 ```bash
 # Frontend
 cd client && pnpm run build
@@ -64,6 +40,93 @@ cd server && go build -o goal-app cmd/api/main.go
 
 # Everything
 ./setup.sh && cd client && pnpm run build && cd ../server && go build -o goal-app cmd/api/main.go
+```
+
+## Testing
+
+### Quick Start - End-to-End Testing
+```bash
+# Run complete test suite (API + PubSub + Analytics)
+./run-e2e-tests.sh
+
+# Test only API endpoints
+./test-api.sh
+
+# Test only PubSub functionality
+./test-pubsub.sh
+```
+
+### Individual Testing
+```bash
+# Frontend tests
+cd client && pnpm test
+
+# Backend tests
+cd server && go test ./...
+
+# Integration tests (with emulators running)
+cd server && ./run-integration-tests.sh
+
+# Manual API testing with curl
+./test-api.sh
+```
+
+### Manual curl Commands
+```bash
+# Health Check
+curl http://localhost:8080/health
+
+# Create a Goal
+curl -X POST http://localhost:8080/api/goals \
+  -H "Content-Type: application/json" \
+  -H "X-User-ID: test-user-123" \
+  -d '{
+    "userId": "test-user-123",
+    "title": "Learn Spanish",
+    "description": "Practice Spanish daily",
+    "targetMinutesPerDay": 30,
+    "startDate": "2025-01-01",
+    "endDate": "2025-12-31",
+    "tags": ["language", "learning"]
+  }'
+
+# Record Progress
+curl -X POST http://localhost:8080/api/progress \
+  -H "Content-Type: application/json" \
+  -H "X-User-ID: test-user-123" \
+  -d '{
+    "goalId": "YOUR_GOAL_ID_HERE",
+    "date": "2025-01-01",
+    "minutesSpent": 35,
+    "note": "Completed first lesson"
+  }'
+
+# Get Progress Report
+curl -X GET "http://localhost:8080/api/progress?month=2025-01" \
+  -H "X-User-ID: test-user-123"
+
+# Get Yearly Summary
+curl -X GET "http://localhost:8080/api/summary/yearly?year=2025" \
+  -H "X-User-ID: test-user-123"
+
+# List Goals with Filters
+curl -X GET "http://localhost:8080/api/goals?tags=language&active=true" \
+  -H "X-User-ID: test-user-123"
+```
+
+### PubSub Event Testing
+```bash
+# Setup PubSub emulator and test events
+./test-pubsub.sh setup
+
+# Start analytics consumer
+./test-pubsub.sh consumer
+
+# Test event publishing
+./test-pubsub.sh test
+
+# Monitor events
+./test-pubsub.sh monitor
 ```
 
 ## Project Structure
@@ -105,6 +168,8 @@ COPY --from=builder /app/goal-app .
 CMD ["./goal-app"]
 ```
 
+## Troubleshooting
+
 ### Health Checks
 ```bash
 # Check if backend is running
@@ -114,44 +179,7 @@ curl http://localhost:8080/health
 # {"status":"ok","service":"goal-app-api"}
 ```
 
-## Environment Configuration
-
-Copy `.env.example` to `.env` and customize:
-
-```bash
-# Development
-FIRESTORE_PROJECT_ID=test-project
-FIRESTORE_EMULATOR_HOST=localhost:8081
-PUBSUB_EMULATOR_HOST=localhost:8085
-PORT=8080
-
-# Production (remove emulator hosts)
-FIRESTORE_PROJECT_ID=your-production-project
-PORT=8080
-```
-
-### Analytics Setup
-```bash
-# For analytics/ directory
-DATABRICKS_HOST=your-workspace.cloud.databricks.com
-DATABRICKS_HTTP_PATH=/sql/1.0/warehouses/your-warehouse-id
-DATABRICKS_TOKEN=your-databricks-token
-```
-
-### Python Dependencies
-```bash
-# Setup Python virtual environment
-cd analytics
-python3 -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-## Troubleshooting
-
 ### Common Issues
-
 **Port already in use:**
 ```bash
 # Find and kill process on port 8080

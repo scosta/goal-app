@@ -70,11 +70,8 @@ func (h *ProgressHandler) GetProgress(c *gin.Context) {
 	startDate := time.Date(yearNum, time.Month(monthNum), 1, 0, 0, 0, 0, time.UTC)
 	endDate := startDate.AddDate(0, 1, 0) // Next month
 
-	// Query progress entries for the given month
-	iter := h.Fs.Collection(h.Coll).
-		Where("CreatedAt", ">=", startDate).
-		Where("CreatedAt", "<", endDate).
-		Documents(c.Request.Context())
+	// Query all progress entries and filter by date
+	iter := h.Fs.Collection(h.Coll).Documents(c.Request.Context())
 
 	var progress []openapi.Progress
 	for {
@@ -84,7 +81,11 @@ func (h *ProgressHandler) GetProgress(c *gin.Context) {
 		}
 		var p openapi.Progress
 		if err := doc.DataTo(&p); err == nil {
-			progress = append(progress, p)
+			// Convert openapi_types.Date to time.Time and check if it's within the month
+			progressDate := p.Date.Time
+			if (progressDate.After(startDate) || progressDate.Equal(startDate)) && progressDate.Before(endDate) {
+				progress = append(progress, p)
+			}
 		}
 	}
 
@@ -102,11 +103,19 @@ func (h *ProgressHandler) GetProgressForGoal(c *gin.Context) {
 		return
 	}
 
-	// Query progress entries for specific goal and month
+	// Parse month to get start and end dates
+	yearNum, monthNum, err := parseYearMonth(month)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid month format. Expected YYYY-MM"})
+		return
+	}
+
+	startDate := time.Date(yearNum, time.Month(monthNum), 1, 0, 0, 0, 0, time.UTC)
+	endDate := startDate.AddDate(0, 1, 0) // Next month
+
+	// Query progress entries for specific goal and filter by date
 	iter := h.Fs.Collection(h.Coll).
 		Where("goalId", "==", goalId).
-		Where("createdAt", ">=", time.Date(2025, 10, 1, 0, 0, 0, 0, time.UTC)).
-		Where("createdAt", "<", time.Date(2025, 11, 1, 0, 0, 0, 0, time.UTC)).
 		Documents(c.Request.Context())
 
 	var progress []openapi.Progress
@@ -117,7 +126,11 @@ func (h *ProgressHandler) GetProgressForGoal(c *gin.Context) {
 		}
 		var p openapi.Progress
 		if err := doc.DataTo(&p); err == nil {
-			progress = append(progress, p)
+			// Convert openapi_types.Date to time.Time and check if it's within the month
+			progressDate := p.Date.Time
+			if (progressDate.After(startDate) || progressDate.Equal(startDate)) && progressDate.Before(endDate) {
+				progress = append(progress, p)
+			}
 		}
 	}
 

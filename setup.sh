@@ -12,6 +12,19 @@ cd ..
 echo "📦 Installing Node.js dependencies..."
 cd client && pnpm install && cd ..
 
+# Setup Python virtual environment for analytics
+echo "🐍 Setting up Python analytics environment..."
+cd analytics
+if [ ! -d "venv" ]; then
+    echo "📦 Creating Python virtual environment..."
+    python3 -m venv venv
+fi
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+cd ..
+echo "✅ Python analytics environment ready"
+
 # Generate types from OpenAPI spec
 echo "🔧 Generating TypeScript types..."
 npx openapi-typescript shared/openapi.yaml -o shared/api-types.ts

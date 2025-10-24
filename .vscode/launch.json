@@ -2,7 +2,20 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Go Tests - Integration",
+            "name": "🚀 Debug Go Server (Full Stack)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/server/cmd/api/main.go",
+            "showLog": true,
+            "env": {
+                "FIRESTORE_PROJECT_ID": "test-project",
+                "PUBSUB_EMULATOR_HOST": "localhost:8085"
+            },
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "🧪 Debug Go Tests - Integration (Goal Workflow)",
             "type": "go",
             "request": "launch",
             "mode": "test",
@@ -13,11 +26,56 @@
             ],
             "showLog": true,
             "env": {
-                "FIRESTORE_EMULATOR_HOST": "localhost:8080"
+                "FIRESTORE_EMULATOR_HOST": "localhost:8081"
             }
         },
         {
-            "name": "Debug Go Tests - Unit",
+            "name": "🧪 Debug Go Tests - Integration (Progress Workflow)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestProgressWorkflow"
+            ],
+            "showLog": true,
+            "env": {
+                "FIRESTORE_EMULATOR_HOST": "localhost:8081"
+            }
+        },
+        {
+            "name": "🧪 Debug Go Tests - Integration (Monthly Summary)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestMonthlySummaryCalculation"
+            ],
+            "showLog": true,
+            "env": {
+                "FIRESTORE_EMULATOR_HOST": "localhost:8081"
+            }
+        },
+        {
+            "name": "🧪 Debug Go Tests - Integration (Yearly Summary)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestYearlySummaryCalculation"
+            ],
+            "showLog": true,
+            "env": {
+                "FIRESTORE_EMULATOR_HOST": "localhost:8081"
+            }
+        },
+        {
+            "name": "🔢 Debug Go Tests - Unit (Calculations)",
             "type": "go",
             "request": "launch",
             "mode": "test",
@@ -29,12 +87,110 @@
             "showLog": true
         },
         {
-            "name": "Debug Go Server",
+            "name": "🔢 Debug Go Tests - Unit (Monthly Stats)",
             "type": "go",
             "request": "launch",
-            "mode": "debug",
-            "program": "${workspaceFolder}/server/cmd/api/main.go",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestCalculateMonthlyStats"
+            ],
             "showLog": true
+        },
+        {
+            "name": "🔢 Debug Go Tests - Unit (Data Processing)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestGroupProgressByGoal"
+            ],
+            "showLog": true
+        },
+        {
+            "name": "🔢 Debug Go Tests - Unit (Validation)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-test.run",
+                "TestValidateGoalData"
+            ],
+            "showLog": true
+        },
+        {
+            "name": "🐍 Debug Python Analytics Consumer",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/analytics/pubsub_consumer.py",
+            "console": "integratedTerminal",
+            "env": {
+                "FIRESTORE_PROJECT_ID": "test-project",
+                "PUBSUB_TOPIC": "goal-events",
+                "PUBSUB_EMULATOR_HOST": "localhost:8085"
+            },
+            "cwd": "${workspaceFolder}/analytics"
+        },
+        {
+            "name": "🧪 Debug All Go Tests (Integration)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-v"
+            ],
+            "showLog": true,
+            "env": {
+                "FIRESTORE_EMULATOR_HOST": "localhost:8081"
+            }
+        },
+        {
+            "name": "🧪 Debug All Go Tests (Unit)",
+            "type": "go",
+            "request": "launch",
+            "mode": "test",
+            "program": "${workspaceFolder}/server/internal/handlers",
+            "args": [
+                "-v",
+                "-run",
+                "TestCalculate|TestValidate|TestGroup|TestCalculate"
+            ],
+            "showLog": true
+        }
+    ],
+    "compounds": [
+        {
+            "name": "🚀 Full Stack Debug (Server + Analytics)",
+            "configurations": [
+                "🚀 Debug Go Server (Full Stack)",
+                "🐍 Debug Python Analytics Consumer"
+            ],
+            "stopAll": true
+        },
+        {
+            "name": "🧪 Debug All Integration Tests",
+            "configurations": [
+                "🧪 Debug Go Tests - Integration (Goal Workflow)",
+                "🧪 Debug Go Tests - Integration (Progress Workflow)",
+                "🧪 Debug Go Tests - Integration (Monthly Summary)",
+                "🧪 Debug Go Tests - Integration (Yearly Summary)"
+            ],
+            "stopAll": true
+        },
+        {
+            "name": "🔢 Debug All Unit Tests",
+            "configurations": [
+                "🔢 Debug Go Tests - Unit (Calculations)",
+                "🔢 Debug Go Tests - Unit (Monthly Stats)",
+                "🔢 Debug Go Tests - Unit (Data Processing)",
+                "🔢 Debug Go Tests - Unit (Validation)"
+            ],
+            "stopAll": true
         }
     ]
 }

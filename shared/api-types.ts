@@ -402,10 +402,12 @@ export interface components {
                 [name: string]: unknown;
             };
             content: {
-                /** @example {
+                /**
+                 * @example {
                  *       "message": "Rate limit exceeded. Please try again later.",
                  *       "code": "RATE_LIMIT_EXCEEDED"
-                 *     } */
+                 *     }
+                 */
                 "application/json": components["schemas"]["Error"];
             };
         };
