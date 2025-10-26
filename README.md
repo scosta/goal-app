@@ -27,7 +27,7 @@ gcloud beta emulators pubsub start --project goal-app
 cd server && go run cmd/api/main.go
 
 # Terminal 4: Python consumer (creates topic/subscription automatically)
-cd analytics && source venv/bin/activate && python pubsub_consumer.py
+cd analytics && source venv/bin/activate && python -u pubsub_consumer.py
 ```
 
 ## Build Applications
