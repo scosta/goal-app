@@ -4,7 +4,7 @@
   "description": "Goal App React Client",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"cd ../server && go run cmd/api/main.go\" \"vite\"",
+    "dev": "concurrently \"cd ../server && go run cmd/api/main.go\" \"cd ../analytics && source venv/bin/activate && python -u pubsub_consumer.py\" \"vite\"",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",

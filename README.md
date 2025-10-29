@@ -28,6 +28,31 @@ cd server && go run cmd/api/main.go
 
 # Terminal 4: Python consumer (creates topic/subscription automatically)
 cd analytics && source venv/bin/activate && python -u pubsub_consumer.py
+
+# Terminal 5: Frontend (React + Vite)
+cd client && npx vite
+```
+
+### Quick Start - Frontend Only
+```bash
+# Start just the frontend (requires backend to be running)
+cd client && npx vite
+
+# Open http://localhost:3000 in your browser
+```
+
+### Quick Start - Full Stack Development
+```bash
+# Start emulators first
+./start-emulators.sh
+
+# Start complete backend + frontend together
+cd client && pnpm dev
+
+# This runs all three:
+# - Go API server on http://localhost:8080
+# - Python analytics consumer (PubSub events)
+# - React frontend on http://localhost:3000
 ```
 
 ## Build Applications
@@ -60,6 +85,9 @@ cd server && go build -o goal-app cmd/api/main.go
 ```bash
 # Frontend tests
 cd client && pnpm test
+
+# Frontend development server
+cd client && pnpm dev
 
 # Backend tests
 cd server && go test ./...
