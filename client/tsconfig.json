@@ -27,7 +27,7 @@
       "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "src/vite-env.d.ts"],
   "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts", "../shared"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

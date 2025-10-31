@@ -15,7 +15,7 @@ cp .env.example .env
 # Edit .env with your values
 ```
 
-### Start All Services
+### Start All Services Individually
 ```bash
 # Terminal 1: Firestore emulator
 firebase emulators:start --project goal-app --only firestore

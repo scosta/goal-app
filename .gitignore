@@ -26,3 +26,5 @@ analytics/venv/
 
 # Build output
 goal-app
+client/dist/
+server/goal-app
