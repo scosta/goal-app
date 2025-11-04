@@ -1,9 +1,10 @@
 import axios, { AxiosInstance } from 'axios';
 
-// In development, use the Vite proxy (/api) which proxies to localhost:8080
-// In production, use the full API URL or relative path
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.DEV ? '/api' : 'http://localhost:8080/api');
+// API base URL configuration:
+// 1. If VITE_API_URL is explicitly set (from root .env file or build-time env vars), use it
+// 2. Otherwise, default to direct connection to Go server on port 8080
+// Note: Vite is configured to read .env files from the project root (see vite.config.ts)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // Create axios instance with default config
 export const apiClient: AxiosInstance = axios.create({
@@ -13,16 +14,19 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Add request interceptor for debugging
+// Add request interceptor for debugging (dev only)
 apiClient.interceptors.request.use(
   (config) => {
-    console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
-      params: config.params,
-      data: config.data,
-    });
+    if (import.meta.env.DEV) {
+      console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+        params: config.params,
+        data: config.data,
+      });
+    }
     return config;
   },
   (error) => {
+    // Always log errors, but use console.error which is more appropriate
     console.error('[API Request Error]', error);
     return Promise.reject(error);
   }
@@ -31,22 +35,35 @@ apiClient.interceptors.request.use(
 // Add response interceptor for error handling and debugging
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-      status: response.status,
-      data: response.data,
-    });
+    if (import.meta.env.DEV) {
+      console.log(`[API Response] ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+        status: response.status,
+        data: response.data,
+      });
+    }
     return response;
   },
   (error) => {
-    // Normalize errors - you can add toast notifications here later
-    console.error('[API Error]', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
-    });
+    // Always log errors for debugging production issues
+    // In production, you might want to send these to an error tracking service
+    if (import.meta.env.DEV) {
+      console.error('[API Error]', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      });
+    } else {
+      // In production, log minimal info to avoid exposing sensitive data
+      console.error('[API Error]', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        message: error.message,
+      });
+    }
     return Promise.reject(error);
   }
 );

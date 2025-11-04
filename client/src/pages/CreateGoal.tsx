@@ -39,10 +39,16 @@ function CreateGoal() {
   };
 
   const onSubmit = handleSubmit((data) => {
-    mutation.mutate({
+    // Build payload, converting empty strings to undefined for optional fields
+    // This prevents sending empty strings that would fail Go's date parsing
+    const payload: typeof data & { userId: string } = {
       ...data,
       userId: getUserId(),
-    }, {
+      // Convert empty endDate to undefined so it's omitted from JSON
+      endDate: data.endDate === '' ? undefined : data.endDate,
+    };
+    
+    mutation.mutate(payload, {
       onSuccess: () => {
         reset(); // Clear form on success
       },

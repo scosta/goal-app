@@ -28,3 +28,6 @@ analytics/venv/
 goal-app
 client/dist/
 server/goal-app
+
+# Go debug binaries (created by Delve debugger)
+**/__debug_bin*

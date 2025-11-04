@@ -28,6 +28,10 @@ func (h *GoalHandler) CreateGoal(c *gin.Context) {
 		return
 	}
 	uid := c.GetString("uid") // set by auth middleware
+	if uid == "" {
+		// Default to test-user for development when auth is not implemented
+		uid = "test-user"
+	}
 	input.Id = uuid.New().String()
 	input.UserId = uid
 	input.CreatedAt = time.Now()
@@ -48,6 +52,10 @@ func (h *GoalHandler) CreateGoal(c *gin.Context) {
 // GET /goals
 func (h *GoalHandler) ListGoals(c *gin.Context) {
 	uid := c.GetString("uid")
+	if uid == "" {
+		// Default to test-user for development when auth is not implemented
+		uid = "test-user"
+	}
 	iter := h.Fs.Collection(h.Coll).Where("UserId", "==", uid).Documents(c.Request.Context())
 	var goals []openapi.Goal
 	for {
@@ -60,5 +68,9 @@ func (h *GoalHandler) ListGoals(c *gin.Context) {
 			goals = append(goals, g)
 		}
 	}
-	c.JSON(http.StatusOK, goals)
+	// Return response matching OpenAPI contract: { goals: [...], total: number }
+	c.JSON(http.StatusOK, gin.H{
+		"goals": goals,
+		"total": len(goals),
+	})
 }

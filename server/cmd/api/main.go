@@ -20,8 +20,13 @@ func main() {
 	fmt.Println("Starting Goal App API server...")
 
 	// Load environment variables from .env file in project root
-	if err := godotenv.Load("../.env"); err != nil {
-		log.Println("No .env file found in project root, using system environment variables")
+	// Try multiple paths to find .env: workspace root, server parent, or current directory
+	if err := godotenv.Load("../../.env"); err != nil {
+		if err := godotenv.Load("../.env"); err != nil {
+			if err := godotenv.Load(".env"); err != nil {
+				log.Println("No .env file found, using system environment variables")
+			}
+		}
 	}
 
 	// Initialize database connection
