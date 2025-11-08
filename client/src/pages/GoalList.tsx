@@ -40,19 +40,34 @@ export default function GoalList() {
     <div style={{ padding: '20px', maxWidth: '800px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <h2>My Goals</h2>
-        <Link 
-          to="/new"
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#007bff',
-            color: 'white',
-            textDecoration: 'none',
-            borderRadius: '4px',
-            fontSize: '14px',
-          }}
-        >
-          + Create New Goal
-        </Link>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <Link 
+            to="/progress"
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '4px',
+              fontSize: '14px',
+            }}
+          >
+            Record Progress
+          </Link>
+          <Link 
+            to="/new"
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              textDecoration: 'none',
+              borderRadius: '4px',
+              fontSize: '14px',
+            }}
+          >
+            + Create New Goal
+          </Link>
+        </div>
       </div>
 
       {total === 0 ? (

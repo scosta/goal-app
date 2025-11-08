@@ -7,14 +7,8 @@ export default function MonthlySummary() {
 
   // Note: API currently filters by userId, so without auth we'll see test-user's summaries
   // Once auth is implemented, this will work automatically
-  const { data: yearlySummary, isLoading: isLoadingSummary, isError: isErrorSummary, error: summaryError } = 
+  const { data: yearlySummary, isLoading, isError, error } = 
     useYearlySummary({ year: selectedYear });
-  const { isLoading: isLoadingMonthly, isError: isErrorMonthly, error: monthlyError } = 
-    useMonthlyData(selectedYear);
-
-  const isLoading = isLoadingSummary || isLoadingMonthly;
-  const isError = isErrorSummary || isErrorMonthly;
-  const error = summaryError || monthlyError;
 
   if (isLoading) {
     return (
@@ -37,7 +31,7 @@ export default function MonthlySummary() {
   }
 
   const overallStats = yearlySummary?.overallStats;
-  const monthlyProgress = yearlySummary?.monthlyData || [];
+  const monthlyProgress = (yearlySummary?.monthlyData || []).filter(month => month.successRate > 0 || month.totalMinutesSpent > 0);
 
   return (
     <div style={{ padding: '20px', maxWidth: '800px' }}>
@@ -105,7 +99,9 @@ export default function MonthlySummary() {
             }}>
               <div style={{ fontSize: '14px', color: '#666', marginBottom: '8px' }}>Best Month</div>
               <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#28a745' }}>
-                {new Date(overallStats.bestMonth.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                {overallStats.bestMonth.month ? 
+                  new Date(overallStats.bestMonth.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) :
+                  'N/A'}
               </div>
               <div style={{ fontSize: '14px', color: '#666' }}>
                 {overallStats.bestMonth.successRate?.toFixed(1) || '0.0'}% success
@@ -145,7 +141,7 @@ export default function MonthlySummary() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <h4 style={{ margin: '0 0 8px 0', fontSize: '16px' }}>
-                    {new Date(month.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    {new Date(month.month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </h4>
                   <div style={{ display: 'flex', gap: '16px', fontSize: '14px', color: '#555' }}>
                     <span>
@@ -155,7 +151,7 @@ export default function MonthlySummary() {
                       <strong>Minutes Spent:</strong> {month.totalMinutesSpent.toLocaleString()}
                     </span>
                     <span>
-                      <strong>Goals Tracked:</strong> {month.goalsTracked}
+                      <strong>Goals Tracked:</strong> {month.goalsTracked || 0}
                     </span>
                   </div>
                 </div>

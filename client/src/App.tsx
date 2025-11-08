@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // Lazy-load pages for code-splitting
 const GoalList = lazy(() => import('./pages/GoalList'));
 const CreateGoal = lazy(() => import('./pages/CreateGoal'));
+const RecordProgress = lazy(() => import('./pages/RecordProgress'));
 const MonthlySummary = lazy(() => import('./pages/MonthlySummary'));
 
 // Simple error boundary to catch runtime errors
@@ -44,6 +45,7 @@ function App() {
           <Routes>
             <Route path="/" element={<GoalList />} />
             <Route path="/new" element={<CreateGoal />} />
+            <Route path="/progress" element={<RecordProgress />} />
             <Route path="/summary" element={<MonthlySummary />} />
           </Routes>
         </Suspense>

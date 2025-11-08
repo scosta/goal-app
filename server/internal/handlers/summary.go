@@ -224,12 +224,34 @@ func (h *SummaryHandler) GetYearlySummary(c *gin.Context) {
 
 	// Calculate monthly summaries
 	var monthlySummaries []struct {
-		Month        string  `json:"month"`
-		MinutesSpent int     `json:"minutesSpent"`
-		SuccessRate  float64 `json:"successRate"`
+		Month            string  `json:"month"`
+		TotalMinutesSpent int     `json:"totalMinutesSpent"`
+		SuccessRate      float64 `json:"successRate"`
+		GoalsTracked     int     `json:"goalsTracked"`
 	}
 	totalMinutesSpent := 0
 	var successRates []float64
+
+	// Get all goals for the user to count goals tracked per month
+	uid := c.GetString("uid")
+	if uid == "" {
+		uid = "test-user" // Default for development
+	}
+	goalsIter := h.Fs.Collection(h.GoalsColl).
+		Where("UserId", "==", uid).
+		Documents(c.Request.Context())
+
+	var goals []openapi.Goal
+	for {
+		doc, err := goalsIter.Next()
+		if err != nil {
+			break
+		}
+		var g openapi.Goal
+		if err := doc.DataTo(&g); err == nil {
+			goals = append(goals, g)
+		}
+	}
 
 	for month := 1; month <= 12; month++ {
 		monthStr := time.Date(yearNum, time.Month(month), 1, 0, 0, 0, 0, time.UTC).Format("2006-01")
@@ -242,19 +264,26 @@ func (h *SummaryHandler) GetYearlySummary(c *gin.Context) {
 
 		// Calculate minutes spent this month
 		monthMinutesSpent := 0
+		goalIdsWithProgress := make(map[string]bool)
 		for _, p := range monthProgress {
 			monthMinutesSpent += p.MinutesSpent
+			goalIdsWithProgress[p.GoalId] = true
 		}
 		totalMinutesSpent += monthMinutesSpent
 
+		// Count goals tracked (goals that have progress entries this month)
+		goalsTracked := len(goalIdsWithProgress)
+
 		monthlySummaries = append(monthlySummaries, struct {
-			Month        string  `json:"month"`
-			MinutesSpent int     `json:"minutesSpent"`
-			SuccessRate  float64 `json:"successRate"`
+			Month            string  `json:"month"`
+			TotalMinutesSpent int     `json:"totalMinutesSpent"`
+			SuccessRate      float64 `json:"successRate"`
+			GoalsTracked     int     `json:"goalsTracked"`
 		}{
-			Month:        monthStr,
-			MinutesSpent: monthMinutesSpent,
-			SuccessRate:  successRate,
+			Month:            monthStr,
+			TotalMinutesSpent: monthMinutesSpent,
+			SuccessRate:      successRate,
+			GoalsTracked:     goalsTracked,
 		})
 
 		if successRate > 0 {
