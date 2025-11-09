@@ -2,6 +2,13 @@
   "emulators": {
     "firestore": {
       "port": 8081
+    },
+    "auth": {
+      "port": 9099
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
     }
   }
 }

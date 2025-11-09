@@ -1,11 +1,15 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Lazy-load pages for code-splitting
 const GoalList = lazy(() => import('./pages/GoalList'));
 const CreateGoal = lazy(() => import('./pages/CreateGoal'));
 const RecordProgress = lazy(() => import('./pages/RecordProgress'));
 const MonthlySummary = lazy(() => import('./pages/MonthlySummary'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 
 // Simple error boundary to catch runtime errors
 class ErrorBoundary extends React.Component<React.PropsWithChildren, { hasError: boolean }> {
@@ -43,10 +47,47 @@ function App() {
       <ErrorBoundary>
         <Suspense fallback={<div style={{ padding: '16px' }}>Loading...</div>}>
           <Routes>
-            <Route path="/" element={<GoalList />} />
-            <Route path="/new" element={<CreateGoal />} />
-            <Route path="/progress" element={<RecordProgress />} />
-            <Route path="/summary" element={<MonthlySummary />} />
+            {/* Public auth routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            
+            {/* Protected routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <GoalList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/new"
+              element={
+                <ProtectedRoute>
+                  <CreateGoal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/progress"
+              element={
+                <ProtectedRoute>
+                  <RecordProgress />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/summary"
+              element={
+                <ProtectedRoute>
+                  <MonthlySummary />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Redirect unknown routes to home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>

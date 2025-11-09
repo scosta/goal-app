@@ -13,6 +13,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/scosta/goal-app/internal/handlers"
+	"github.com/scosta/goal-app/internal/middleware"
 	apppubsub "github.com/scosta/goal-app/internal/pubsub"
 )
 
@@ -47,6 +48,16 @@ func main() {
 		log.Fatal("Failed to create Firestore client:", err)
 	}
 	defer fsClient.Close()
+
+	// Initialize Firebase Auth
+	authClient, err := middleware.InitializeFirebaseAuth(ctx, projectID)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize Firebase Auth: %v", err)
+		log.Println("Authentication will be disabled. Set GOOGLE_APPLICATION_CREDENTIALS for production.")
+		authClient = nil
+	} else {
+		log.Println("Firebase Auth initialized successfully")
+	}
 
 	// Initialize PubSub client
 	var publisher *apppubsub.Publisher
@@ -127,18 +138,30 @@ func main() {
 		GoalsColl:    "goals",
 	}
 
+	// Initialize auth middleware (if auth is available)
+	var authMiddleware *middleware.AuthMiddleware
+	if authClient != nil {
+		authMiddleware = middleware.NewAuthMiddleware(authClient)
+	}
+
 	// Set up routes with handlers
 	api := router.Group("/api")
 	{
-		// Goals routes
+		// Goals routes - protected with authentication
 		goals := api.Group("/goals")
+		if authMiddleware != nil {
+			goals.Use(authMiddleware.RequireAuth())
+		}
 		{
 			goals.POST("", goalHandler.CreateGoal)
 			goals.GET("", goalHandler.ListGoals)
 		}
 
-		// Progress routes
+		// Progress routes - protected with authentication
 		progress := api.Group("/progress")
+		if authMiddleware != nil {
+			progress.Use(authMiddleware.RequireAuth())
+		}
 		{
 			progress.POST("", progressHandler.RecordProgress)
 			progress.GET("", progressHandler.GetProgress)
@@ -147,8 +170,11 @@ func main() {
 			progress.DELETE("/:progressId", progressHandler.DeleteProgress)
 		}
 
-		// Summary routes
+		// Summary routes - protected with authentication
 		summary := api.Group("/summary")
+		if authMiddleware != nil {
+			summary.Use(authMiddleware.RequireAuth())
+		}
 		{
 			summary.GET("/monthly", summaryHandler.GetMonthlySummary)
 			summary.GET("/yearly", summaryHandler.GetYearlySummary)

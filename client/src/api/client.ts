@@ -1,4 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import { auth } from '../config/firebase';
 
 // API base URL configuration:
 // 1. If VITE_API_URL is explicitly set (from root .env file or build-time env vars), use it
@@ -14,9 +15,23 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Add request interceptor for debugging (dev only)
+// Add request interceptor to attach Firebase ID token
 apiClient.interceptors.request.use(
-  (config) => {
+  async (config: InternalAxiosRequestConfig) => {
+    // Get the current user's ID token
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        const token = await user.getIdToken();
+        if (token && config.headers) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } catch (error) {
+        console.error('Failed to get ID token:', error);
+        // Continue without token - backend will handle auth failure
+      }
+    }
+
     if (import.meta.env.DEV) {
       console.log(`[API Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
         params: config.params,

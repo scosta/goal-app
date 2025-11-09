@@ -1,11 +1,21 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useGoals, useDeleteGoal } from '../api/goals';
+import { useAuth } from '../hooks/useAuth';
 
 export default function GoalList() {
-  // Note: API currently filters by userId, so without auth we'll only see test-user's goals
-  // Once auth is implemented, this will work automatically
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const { data, isLoading, isError, error } = useGoals();
   const deleteMutation = useDeleteGoal();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -39,8 +49,15 @@ export default function GoalList() {
   return (
     <div style={{ padding: '20px', maxWidth: '800px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h2>My Goals</h2>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div>
+          <h2 style={{ margin: '0 0 4px 0' }}>My Goals</h2>
+          {user && (
+            <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+              {user.email}
+            </p>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <Link 
             to="/progress"
             style={{
@@ -67,6 +84,20 @@ export default function GoalList() {
           >
             + Create New Goal
           </Link>
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '10px 20px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
+          >
+            Logout
+          </button>
         </div>
       </div>
 

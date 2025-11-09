@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useYearlySummary, useMonthlyData } from '../api/summary';
+import { useYearlySummary } from '../api/summary';
 
 export default function MonthlySummary() {
   const currentYear = new Date().getFullYear();

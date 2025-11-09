@@ -2,7 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useCreateGoal } from '../api/goals';
-import { useUserStore } from '../stores/userStore';
+import { useAuth } from '../hooks/useAuth';
 
 // Create goal schema without id, userId, and createdAt
 const createGoalSchema = z.object({
@@ -17,7 +17,7 @@ const createGoalSchema = z.object({
 type CreateGoalFormData = z.infer<typeof createGoalSchema>;
 
 function CreateGoal() {
-  const { user } = useUserStore();
+  const { user } = useAuth();
   const {
     register,
     handleSubmit,
@@ -33,9 +33,9 @@ function CreateGoal() {
 
   const mutation = useCreateGoal();
 
-  // Use authenticated user if available, otherwise fall back to test user
+  // Use authenticated user - should always be available since route is protected
   const getUserId = () => {
-    return user?.uid || 'test-user';
+    return user?.uid || '';
   };
 
   const onSubmit = handleSubmit((data) => {
